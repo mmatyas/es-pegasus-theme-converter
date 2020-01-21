@@ -5,9 +5,9 @@ from typing import Dict, List
 
 
 def print_debug(elem):
-    print(f"    - {elem['type']} {elem['name']} extra:{elem['is_extra']}")
-    for prop in elem['params']:
-        print(f"      - {prop}: {elem['params'][prop]}")
+    print(f"    - {elem.type} {elem.name} extra:{elem.is_extra}")
+    for prop in elem.params:
+        print(f"      - {prop}: {elem.params[prop]}")
 
 
 def font_path_to_name(path: str) -> str:
@@ -41,10 +41,10 @@ def get_defaults(viewtype: str, elemtype: str, elemname: str) -> Dict[str, str]:
 
 
 def es_zorder(viewtype: str, elem) -> int:
-    if 'zIndex' in elem['params']:
-        return int(elem['params']['zIndex'])
+    if 'zIndex' in elem.params:
+        return int(elem.params['zIndex'])
 
-    return DEFAULT_ZORDERS.get(elem['name'], 10)
+    return DEFAULT_ZORDERS.get(elem.name, 10)
 
 
 def render_props(props: Dict[str, str], indent=1) -> List[str]:
@@ -54,17 +54,17 @@ def render_props(props: Dict[str, str], indent=1) -> List[str]:
 
 
 def render_prop_id(elem, props: Dict[str, str]):
-    clean_str = re.sub('[^a-zA-Z0-9_]+', '_', elem['name'])
+    clean_str = re.sub('[^a-zA-Z0-9_]+', '_', elem.name)
     props['id'] = clean_str[0].lower() + clean_str[1:]
 
     # FIXME: handle non-extra items marked as extra on the XML side
-    # if elem['is_extra']:
+    # if elem.is_extra:
     #     props['id'] = 'x_' + props['id']  # to avoid illegal JS names
 
 
 def render_prop_pos(elem, props: Dict[str, str]):
-    if 'pos' in elem['params']:
-        pair = elem['params']['pos']
+    if 'pos' in elem.params:
+        pair = elem.params['pos']
 
         if pair.a == 0.0:
             props['x'] = "0"
@@ -76,8 +76,8 @@ def render_prop_pos(elem, props: Dict[str, str]):
         else:
             props['y'] = f"{pair.b} * root.height"
 
-        if 'origin' in elem['params']:
-            origin = elem['params']['origin']
+        if 'origin' in elem.params:
+            origin = elem.params['origin']
             if origin.a != 0.0:
                 props['x'] = f"{props['x']} - {origin.a} * width"
             if origin.b != 0.0:
@@ -85,11 +85,11 @@ def render_prop_pos(elem, props: Dict[str, str]):
 
 
 def render_prop_rotation(elem, props: Dict[str, str]):
-    if 'rotation' in elem['params']:
-        angle = elem['params']['rotation']
+    if 'rotation' in elem.params:
+        angle = elem.params['rotation']
         origin = [0.5, 0.5]
-        if 'rotationOrigin' in elem['params']:
-            pair = elem['params']['rotationOrigin']
+        if 'rotationOrigin' in elem.params:
+            pair = elem.params['rotationOrigin']
             origin = [pair.a, pair.b]
 
         props['transform'] = f"Rotation {{ \
@@ -100,30 +100,30 @@ def render_prop_rotation(elem, props: Dict[str, str]):
 
 
 def render_prop_zindex(elem, props: Dict[str, str]):
-    if 'zIndex' in elem['params']:
-        props['z'] = elem['params']['zIndex']
+    if 'zIndex' in elem.params:
+        props['z'] = elem.params['zIndex']
 
 
 def render_prop_visible(elem, props: Dict[str, str]):
-    if 'visible' in elem['params']:
-        if not elem['params']['visible']:
+    if 'visible' in elem.params:
+        if not elem.params['visible']:
             props['visible'] = "false"
 
 
 def render_prop_opacity(elem, props: Dict[str, str]):
-    if 'color' in elem['params']:
-        color = elem['params']['color']
+    if 'color' in elem.params:
+        color = elem.params['color']
         if len(color.hex) == 8:
             alpha = int(color.hex[-2:], 16)
             props['opacity'] = str(alpha / 255.0)
 
 
 def render_prop_color_overlay(elem, elem_id: str, lines: List[str]):
-    if 'color' in elem['params']:
+    if 'color' in elem.params:
         props = {}
         props['anchors.fill'] = elem_id
         props['source'] = elem_id
-        props['color'] = create_rgba_color(elem['params']['color'])
+        props['color'] = create_rgba_color(elem.params['color'])
         lines.extend([
             "ColorOverlay {",
             *render_props(props),
@@ -136,8 +136,8 @@ def create_rgba_color(color) -> str:
 
 
 def render_prop_fontinfo(elem, props: Dict[str, str]):
-    if 'fontPath' in elem['params']:
-        value = elem['params']['fontPath']
+    if 'fontPath' in elem.params:
+        value = elem.params['fontPath']
         font_id = font_path_to_name(value)
         props['font.family'] = f"{font_id}.name"
 
@@ -147,29 +147,29 @@ def render_prop_fontinfo(elem, props: Dict[str, str]):
         if font_id.endswith('bold'):
             props['font.weight'] = "Font.Bold"
 
-    if 'fontSize' in elem['params']:
-        size = elem['params']['fontSize']
+    if 'fontSize' in elem.params:
+        size = elem.params['fontSize']
         props['font.pixelSize'] = f"{size} * root.height"
 
 
 def render_prop_textinfo(elem, props: Dict[str, str]):
-    if 'alignment' in elem['params']:
-        if elem['params']['alignment'] == 'center':
+    if 'alignment' in elem.params:
+        if elem.params['alignment'] == 'center':
             props['horizontalAlignment'] = "Text.AlignHCenter"
             props['verticalAlignment'] = "Text.AlignVCenter"
-        elif elem['params']['alignment'] == 'right':
+        elif elem.params['alignment'] == 'right':
             props['horizontalAlignment'] = "Text.AlignRight"
 
-    if 'forceUppercase' in elem['params']:
-        if elem['params']['forceUppercase']:
+    if 'forceUppercase' in elem.params:
+        if elem.params['forceUppercase']:
             props['font.capitalization'] = "Font.AllUppercase"
 
-    if 'lineSpacing' in elem['params']:
-        props['lineHeight'] = elem['params']['lineSpacing']
+    if 'lineSpacing' in elem.params:
+        props['lineHeight'] = elem.params['lineSpacing']
 
 
 def render_image(viewtype: str, elem, indent_level=1) -> List[str]:
-    props = get_defaults(viewtype, elem['type'], elem['name'])
+    props = get_defaults(viewtype, elem.type, elem.name)
 
     render_prop_id(elem, props)
     render_prop_pos(elem, props)
@@ -178,8 +178,8 @@ def render_image(viewtype: str, elem, indent_level=1) -> List[str]:
     render_prop_zindex(elem, props)
     render_prop_visible(elem, props)
 
-    if 'size' in elem['params']:
-        pair = elem['params']['size']
+    if 'size' in elem.params:
+        pair = elem.params['size']
         has_width = pair.a != 0.0
         has_height = pair.b != 0.0
 
@@ -196,27 +196,27 @@ def render_image(viewtype: str, elem, indent_level=1) -> List[str]:
             props['width'] = "height * (implicitWidth || 1) / (implicitHeight || 1)"
             props['height'] = f"{pair.b} * root.height"
 
-    elif 'maxSize' in elem['params']:
-        pair = elem['params']['maxSize']
+    elif 'maxSize' in elem.params:
+        pair = elem.params['maxSize']
         props['width'] = f"{pair.a} * root.width"
         props['height'] = f"{pair.b} * root.height"
         props['fillMode'] = 'Image.PreserveAspectFit'
 
-    if 'tile' in elem['params'] and elem['params']['tile']:
+    if 'tile' in elem.params and elem.params['tile']:
         props['fillMode'] = 'Image.Tile'
 
-    if 'path' in elem['params']:
-        props['source'] = prepare_text('../' + elem['params']['path'])
-        if 'default' in elem['params']:
-            default = prepare_text('../' + elem['params']['default'])
+    if 'path' in elem.params:
+        props['source'] = prepare_text('../' + elem.params['path'])
+        if 'default' in elem.params:
+            default = prepare_text('../' + elem.params['default'])
             props['source'] = f"{props['source']} || {default}"
 
     # Default origins, FIXME
     # logo: 0.5/0
-    if elem['name'] == 'logo' and 'origin' not in elem['params']:
+    if elem.name == 'logo' and 'origin' not in elem.params:
         props['x'] = f"{props['x']} - 0.5 * width"
     # md_image: 0.5/0.5
-    if viewtype == 'detailed' and elem['name'] == 'md_image' and 'origin' not in elem['params']:
+    if viewtype == 'detailed' and elem.name == 'md_image' and 'origin' not in elem.params:
         props['x'] = f"{props['x']} - 0.5 * width"
         props['y'] = f"{props['y']} - 0.5 * height"
 
@@ -229,7 +229,7 @@ def render_image(viewtype: str, elem, indent_level=1) -> List[str]:
         *render_props(props),
         "}"
     ]
-    if 'opacity' not in elem['params']:
+    if 'opacity' not in elem.params:
         lines.insert(len(lines) - 1, '  Behavior on opacity { NumberAnimation { duration: 120 } }')
 
     render_prop_color_overlay(elem, props['id'], lines)
@@ -238,7 +238,7 @@ def render_image(viewtype: str, elem, indent_level=1) -> List[str]:
 
 
 def render_text(viewtype: str, elem, indent_level=1) -> List[str]:
-    props = get_defaults(viewtype, elem['type'], elem['name'])
+    props = get_defaults(viewtype, elem.type, elem.name)
     childs = []
 
     render_prop_id(elem, props)
@@ -250,8 +250,8 @@ def render_text(viewtype: str, elem, indent_level=1) -> List[str]:
     render_prop_fontinfo(elem, props)
     render_prop_textinfo(elem, props)
 
-    if 'size' in elem['params']:
-        pair = elem['params']['size']
+    if 'size' in elem.params:
+        pair = elem.params['size']
         if pair.a != 0.0:
             props['width'] = f"{pair.a} * root.width"
             props['wrapMode'] = "Text.WordWrap"
@@ -259,25 +259,25 @@ def render_text(viewtype: str, elem, indent_level=1) -> List[str]:
             props['height'] = f"{pair.b} * root.height"
             props['elide'] = "Text.ElideRight"
 
-    if 'color' in elem['params']:
-        props['color'] = create_rgba_color(elem['params']['color'])
+    if 'color' in elem.params:
+        props['color'] = create_rgba_color(elem.params['color'])
 
-    if 'backgroundColor' in elem['params']:
-        color_str = create_rgba_color(elem['params']['backgroundColor'])
+    if 'backgroundColor' in elem.params:
+        color_str = create_rgba_color(elem.params['backgroundColor'])
         childs.append(f"Rectangle {{ anchors.fill: parent; color: '{color_str}'; z: -1 }}")
 
-    if elem['type'] == 'text':
-        if 'text' in elem['params']:
-            props['text'] = prepare_text(elem['params']['text'])
+    if elem.type == 'text':
+        if 'text' in elem.params:
+            props['text'] = prepare_text(elem.params['text'])
 
-    if elem['type'] == 'datetime':
-        if elem['name'] == 'md_releasedate':
+    if elem.type == 'datetime':
+        if elem.name == 'md_releasedate':
             date_param = 'currentGame.release'
-        if elem['name'] == 'md_lastplayed':
+        if elem.name == 'md_lastplayed':
             date_param = 'currentGame.lastPlayed'
 
-        if 'format' in elem['params']:
-            format_str = elem['params'] \
+        if 'format' in elem.params:
+            format_str = elem.params \
                 .replace('%Y', 'yyyy') \
                 .replace('%m', 'MM') \
                 .replace('%d', 'dd') \
@@ -287,7 +287,7 @@ def render_text(viewtype: str, elem, indent_level=1) -> List[str]:
                 .replace("'", "\\'")
             props['readonly property string dateFormat'] = format_str
 
-        if elem['params'].get('displayRelative', False):
+        if elem.params.get('displayRelative', False):
             props.pop('readonly property string dateFormat', None)
             props['text'] = f'Helpers.relative_date({date_param})'
 
@@ -304,7 +304,7 @@ def render_text(viewtype: str, elem, indent_level=1) -> List[str]:
 
 
 def render_rating(viewtype: str, elem, indent_level=1) -> List[str]:
-    props = get_defaults(viewtype, elem['type'], elem['name'])
+    props = get_defaults(viewtype, elem.type, elem.name)
 
     render_prop_id(elem, props)
     render_prop_pos(elem, props)
@@ -313,13 +313,13 @@ def render_rating(viewtype: str, elem, indent_level=1) -> List[str]:
     render_prop_visible(elem, props)
     render_prop_opacity(elem, props)
 
-    if 'filledPath' in elem['params']:
-        props['filledPath'] = f"'../{elem['params']['filledPath']}'"
-    if 'unfilledPath' in elem['params']:
-        props['unfilledPath'] = f"'../{elem['params']['unfilledPath']}'"
+    if 'filledPath' in elem.params:
+        props['filledPath'] = f"'../{elem.params['filledPath']}'"
+    if 'unfilledPath' in elem.params:
+        props['unfilledPath'] = f"'../{elem.params['unfilledPath']}'"
 
-    if 'size' in elem['params']:
-        pair = elem['params']['size']
+    if 'size' in elem.params:
+        pair = elem.params['size']
         if pair.b == 0.0:
             props['width'] = f"{pair.a} * root.width * 5"
             props['height'] = 'width / 5'
@@ -343,7 +343,7 @@ def render_rating(viewtype: str, elem, indent_level=1) -> List[str]:
 
 
 def render_helpsystem(viewtype: str, elem, indent_level=1) -> List[str]:
-    props = get_defaults(viewtype, elem['type'], elem['name'])
+    props = get_defaults(viewtype, elem.type, elem.name)
 
     render_prop_id(elem, props)
     render_prop_pos(elem, props)
@@ -351,8 +351,8 @@ def render_helpsystem(viewtype: str, elem, indent_level=1) -> List[str]:
 
     for kind in ['textColor', 'iconColor']:
         props[kind] = "'#777777'"
-        if kind in elem['params']:
-            props[kind] = create_rgba_color(elem['params'][kind])
+        if kind in elem.params:
+            props[kind] = create_rgba_color(elem.params[kind])
 
     return []
     return [
@@ -363,8 +363,8 @@ def render_helpsystem(viewtype: str, elem, indent_level=1) -> List[str]:
 
 
 def render_textlist(viewtype: str, elem, indent_level=1) -> List[str]:
-    list_props = get_defaults(viewtype, elem['type'], elem['name'])
-    delegate_props = get_defaults(viewtype, elem['type'] + '__delegate', elem['name'] + '__delegate')
+    list_props = get_defaults(viewtype, elem.type, elem.name)
+    delegate_props = get_defaults(viewtype, elem.type + '__delegate', elem.name + '__delegate')
 
     render_prop_id(elem, list_props)
     render_prop_pos(elem, list_props)
@@ -373,47 +373,47 @@ def render_textlist(viewtype: str, elem, indent_level=1) -> List[str]:
     render_prop_zindex(elem, list_props)
     render_prop_visible(elem, list_props)
 
-    if 'size' in elem['params']:
-        pair = elem['params']['size']
+    if 'size' in elem.params:
+        pair = elem.params['size']
         list_props['width'] = f"{pair.a} * root.width"
         list_props['height'] = f"{pair.b} * root.height"
         list_props['clip'] = "true"
 
-    if 'selectorImagePath' in elem['params']:
+    if 'selectorImagePath' in elem.params:
         hl_type = 'Image'
         hl_props = {
-            'source': "'../" + elem['params']['selectorImagePath'] + "'",
+            'source': "'../" + elem.params['selectorImagePath'] + "'",
             'asynchronous': 'true',
             # 'fillMode': 'Image.Pad',
             'smooth': 'false',
         }
-        if 'selectorImageTile' in elem['params']:
-            if elem['params']['selectorImageTile']:
+        if 'selectorImageTile' in elem.params:
+            if elem.params['selectorImageTile']:
                 hl_props['fillMode'] = "Image.PreserveAspectFit"
     else:
         hl_type = 'Rectangle'
         hl_props = {
             'color': "'#000'"
         }
-        if 'selectorColor' in elem['params']:
-            hl_props['color'] = create_rgba_color(elem['params']['selectorColor'])
+        if 'selectorColor' in elem.params:
+            hl_props['color'] = create_rgba_color(elem.params['selectorColor'])
 
-    if 'fontSize' in elem['params']:
-        size = elem['params']['fontSize']
+    if 'fontSize' in elem.params:
+        size = elem.params['fontSize']
         list_props['readonly property int highlightHeight'] = f"{size} * 1.5 * root.height"
 
     list_props['highlight'] = f"{hl_type} {{ {'; '.join(render_props(hl_props, indent=0))}; }}"
 
-    if 'primaryColor' in elem['params']:
-        delegate_props['readonly property color unselectedColor'] = create_rgba_color(elem['params']['primaryColor'])
+    if 'primaryColor' in elem.params:
+        delegate_props['readonly property color unselectedColor'] = create_rgba_color(elem.params['primaryColor'])
         delegate_props['color'] = 'unselectedColor'
-    if 'selectedColor' in elem['params']:
-        delegate_props['readonly property color selectedColor'] = create_rgba_color(elem['params']['selectedColor'])
-    if 'primaryColor' in elem['params'] and 'selectedColor' in elem['params']:
+    if 'selectedColor' in elem.params:
+        delegate_props['readonly property color selectedColor'] = create_rgba_color(elem.params['selectedColor'])
+    if 'primaryColor' in elem.params and 'selectedColor' in elem.params:
         delegate_props['color'] = 'ListView.isCurrentItem ? selectedColor : unselectedColor'
 
-    if 'horizontalMargin' in elem['params']:
-        pad = elem['params']['horizontalMargin']
+    if 'horizontalMargin' in elem.params:
+        pad = elem.params['horizontalMargin']
         delegate_props['leftPadding'] = f'{pad} * root.width'
         delegate_props['rightPadding'] = 'leftPadding'
 
@@ -447,50 +447,50 @@ def render_view_items(viewtype: str, platform_name, elems) -> List[str]:
     reserved_items: Dict[str, str] = RESERVED_ITEMS.get(viewtype, {})
 
     for elem in elems:
-        if elem['is_extra']:
-            if elem['name'] in RESTRICTED_TYPES:
-                warn(f"{platform_name}, {viewtype} view: `{elem['name']}` cannot be created as an extra element, "
+        if elem.is_extra:
+            if elem.name in RESTRICTED_TYPES:
+                warn(f"{platform_name}, {viewtype} view: `{elem.name}` cannot be created as an extra element, "
                      "because it doesn't have anything to display on its own")
                 continue
-            if elem['name'] in reserved_items:
-                warn(f"{platform_name}, {viewtype} view: `{elem['name']}` is marked as extra, "
+            if elem.name in reserved_items:
+                warn(f"{platform_name}, {viewtype} view: `{elem.name}` is marked as extra, "
                      f"but there's a non-extra item with the same name. This isn't well supported "
                      "at the moment, expect issues.")
-                # elem['is_extra'] = False
+                # elem.is_extra = False
                 # continue
 
-        if not elem['is_extra']:
-            if elem['name'] not in reserved_items:
-                warn(f"{platform_name}, {viewtype} view: `{elem['name']}` is not marked as extra, "
+        if not elem.is_extra:
+            if elem.name not in reserved_items:
+                warn(f"{platform_name}, {viewtype} view: `{elem.name}` is not marked as extra, "
                      f"but no items with such name exist in this view. Entry ignored.")
                 continue
 
-            expected_type = reserved_items[elem['name']]
-            if elem['type'] != expected_type:
-                warn(f"{platform_name}, {viewtype} view: `{elem['type']}` properties are set for `{elem['name']}`, "
+            expected_type = reserved_items[elem.name]
+            if elem.type != expected_type:
+                warn(f"{platform_name}, {viewtype} view: `{elem.type}` properties are set for `{elem.name}`, "
                      f"but the type of that is `{expected_type}`. Properties ignored.")
                 continue
 
-        # print(platform_name, viewtype, elem['type'], elem['name'])
+        # print(platform_name, viewtype, elem.type, elem.name)
 
-        if elem['type'] == 'image':
-            if not (viewtype == 'system' and elem['name'] == 'logo'):
+        if elem.type == 'image':
+            if not (viewtype == 'system' and elem.name == 'logo'):
                 lines.extend(render_image(viewtype, elem))
             continue
-        if elem['type'] == 'text':
-            if not (viewtype == 'system' and elem['name'] in ['systemInfo', 'logoText']):
+        if elem.type == 'text':
+            if not (viewtype == 'system' and elem.name in ['systemInfo', 'logoText']):
                 lines.extend(render_text(viewtype, elem))
             continue
-        if elem['type'] == 'datetime':
+        if elem.type == 'datetime':
             lines.extend(render_text(viewtype, elem))
             continue
-        if elem['type'] == 'rating':
+        if elem.type == 'rating':
             lines.extend(render_rating(viewtype, elem))
             continue
-        if elem['type'] == 'helpsystem':
+        if elem.type == 'helpsystem':
             lines.extend(render_helpsystem(viewtype, elem))
             continue
-        if elem['type'] == 'textlist':
+        if elem.type == 'textlist':
             lines.extend(render_textlist(viewtype, elem))
             continue
         print_debug(elem)
