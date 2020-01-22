@@ -281,35 +281,10 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
         'asynchronous': 'true',
         'visible': 'status == Image.Ready',
         'opacity': 'visible ? 1.0 : 0.0',
-        # ie. untransformed:
-        # 'width': 'root.width',
-        # 'height': 'root.height',
-        # 'fillMode': 'Image.Pad',
-        # 'horizontalAlignment': 'Image.AlignLeft',
-        # 'verticalAlignment': 'Image.AlignTop',
         'fillMode': 'Image.PreserveAspectFit',
         'smooth': 'false',
     },
-    ('*', 'image', 'logo'): {
-        'x': 'root.width * 0.5 - width * 0.5',
-        'height': 'root.height * 0.185',
-        # 'fillMode': 'Image.PreserveAspectFit',
-    },
-    ('*', 'image', 'background'): {
-        'width': 'root.width',
-        'height': 'root.height',
-        # 'fillMode': 'Image.Stretch',
-        # 'fillMode': 'Image.PreserveAspectFit',
-        # 'horizontalAlignment': 'Image.AlignHCenter',
-        # 'verticalAlignment': 'Image.AlignVCenter',
-    },
-    # NOTE: origin 0.5/0.5 handled in the render code
     ('detailed', 'image', 'md_image'): {
-        'x': 'root.width * 0.25',
-        'y': 'gamelist.y + root.height * 0.2125',
-        'width': 'root.width * 0.48',
-        'height': 'root.height * 0.4',
-        # 'fillMode': 'Image.PreserveAspectFit',
         'source': 'currentGame.assets.boxFront',
     },
     # ('detailed', 'image', 'md_marquee'): {
@@ -320,13 +295,9 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
         'color': "'#000'",
         'horizontalAlignment': 'Text.AlignLeft',
         'verticalAlignment': 'Text.AlignVCenter',
-        # 'lineHeight': '1.5',
-        'font.pixelSize': FONT_SIZE_MEDIUM,
         'font.family': 'es_default.name',
     },
     ('*', 'text', 'logoText'): {
-        'x': 'root.width * 0.5 - width * 0.5',
-        'y': '0',
         'text': 'modelData.name',
         'visible': '!logo.visible',
     },
@@ -342,56 +313,17 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
         'Keys.onPressed': 'if (!event.isAutoRepeat && api.keys.isAccept(event))'
                           ' { event.accepted = true; currentGame.launch(); }',
     },
-    ('basic', 'textlist', 'gamelist'): {
-        'x': '0',
-        'y': '0.2 * root.height',
-        'width': 'root.width',
-        'height': '0.8 * root.height',
-    },
-    ('detailed', 'textlist', 'gamelist'): {
-        'x': '0.51 * root.width',
-        'y': '0.2 * root.height',
-        'width': '0.49 * root.width',
-        'height': '0.8 * root.height',
-    },
     ('*', 'textlist__delegate', 'gamelist__delegate'): {
         'width': 'ListView.view.width',
-        # 'height': 'font.pixelSize * 1.5',
-        'font.pixelSize': FONT_SIZE_MEDIUM,
         'elide': 'Text.ElideRight',
-        'lineHeight': '1.5',
-        'horizontalAlignment': 'Text.AlignHCenter',
-        'verticalAlignment': 'Text.AlignVCenter',
-        'color': "'#00f'",
         'text': 'modelData.title',
-    },
-    ('detailed', 'textlist__delegate', 'gamelist__delegate'): {
-        'horizontalAlignment': 'Text.AlignLeft',
-    },
-    ('*', 'rating', '*'): {
-        'filledPath': "'../__es_resources/star_filled.svg'",
-        'unfilledPath': "'../__es_resources/star_unfilled.svg'",
-        'percentage': '0.5',
-        'width': '5 * height'
     },
     ('*', 'rating', 'md_rating'): {
         'percentage': 'currentGame.rating',
-        'height': FONT_SIZE_SMALL,
-    },
-    ('*', 'datetime', '*'): {
-        'readonly property string dateFormat': "'yyyy-MM-dd'",
     },
     ('*', 'text', 'md_description'): {
-        'font.pixelSize': FONT_SIZE_SMALL,
-        'x': '0.01 * root.width',
-        'width': '0.48 * root.width',
-        'height': 'root.height - y',
         'verticalAlignment': 'Text.AlignTop',
         'wrapMode': 'Text.WordWrap',
-    },
-    ('*', 'text', 'md_name'): {
-        'x': 'root.width',
-        'y': 'root.height',
     },
     ('*', 'helpsystem', '*'): {
         'x': '0.012 * root.width',
@@ -402,6 +334,10 @@ DEFAULT_PROPS[('*', 'datetime', '*')] = {
     **DEFAULT_PROPS.get(('*', 'text', '*'), {}),
     **DEFAULT_PROPS.get(('*', 'datetime', '*'), {}),
 }
+DEFAULT_PROPS[('*', 'textlist__delegate', 'gamelist__delegate')] = {
+    **DEFAULT_PROPS.get(('*', 'text', '*'), {}),
+    **DEFAULT_PROPS.get(('*', 'textlist__delegate', 'gamelist__delegate'), {}),
+}
 
 
 def add_label_defaults():
@@ -411,21 +347,14 @@ def add_label_defaults():
     texts = {
         'md_name': "currentGame.title",
         'md_description': "currentGame.description",
-        'md_releasedate': "Qt.formatDateTime(currentGame.release, dateFormat) || 'unknown'",  # TODO: release -> releaseDate
+        # TODO: release -> releaseDate
+        'md_releasedate': "Qt.formatDateTime(currentGame.release, dateFormat) || 'unknown'",
         'md_developer': "currentGame.developer || 'unknown'",
         'md_publisher': "currentGame.publisher || 'unknown'",
         'md_genre': "currentGame.genre || 'unknown'",
         'md_players': "Helpers.format_players(currentGame.players)",
         'md_lastplayed': "Helpers.relative_date(currentGame.lastPlayed)",
         'md_playcount': "currentGame.playCount",
-        'md_lbl_rating': "'Rating: '",
-        'md_lbl_releasedate': "'Released: '",
-        'md_lbl_developer': "'Developer: '",
-        'md_lbl_publisher': "'Publisher: '",
-        'md_lbl_genre': "'Genre: '",
-        'md_lbl_players': "'Players: '",
-        'md_lbl_lastplayed': "'Last played: '",
-        'md_lbl_playcount': "'Times played: '",
     }
     for key, text in texts.items():
         def_key = (view, RESERVED_ITEMS[view][key], key)
