@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from typing import Dict, List, Set
 
 from errors import *
-from es_items import Platform, Element
+from es_items import Platform, Element, create_default_views
 from property_types import parse_param, Property
 from static import KNOWN_ELEMENTS, RESERVED_ITEMS, MAX_FORMAT_VERSION
 
@@ -229,7 +229,7 @@ def find_platforms(root_dir: str) -> List[Platform]:
 
         try:
             variables: Dict[str, str] = {}
-            views: Dict[str, Dict[str, Element]] = {}
+            views: Dict[str, Dict[str, Element]] = create_default_views(root_dir)
             unsupported_elems = read_theme_xml(root_dir, xml_path, variables, views)
         except RuntimeError as err:
             print_error(err)
