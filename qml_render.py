@@ -213,15 +213,6 @@ def render_image(viewname: str, elem: Element, indent_level=1) -> List[str]:
             default = prepare_text('../' + elem.params['default'])
             props['source'] = f"{props['source']} || {default}"
 
-    # Default origins, FIXME
-    # logo: 0.5/0
-    if elem.name == 'logo' and 'origin' not in elem.params:
-        props['x'] = f"{props['x']} - 0.5 * width"
-    # md_image: 0.5/0.5
-    if viewname == 'detailed' and elem.name == 'md_image' and 'origin' not in elem.params:
-        props['x'] = f"{props['x']} - 0.5 * width"
-        props['y'] = f"{props['y']} - 0.5 * height"
-
     if 'source' not in props:
         # return []
         pass
@@ -273,10 +264,8 @@ def render_text(viewname: str, elem: Element, indent_level=1) -> List[str]:
             props['text'] = prepare_text(elem.params['text'])
 
     if elem.type == 'datetime':
-        if elem.name == 'md_releasedate':
-            date_param = 'currentGame.release'
-        if elem.name == 'md_lastplayed':
-            date_param = 'currentGame.lastPlayed'
+        if elem.params.get('displayRelative', False):
+            props['text'] = 'Helpers.relative_date(value)'
 
         if 'format' in elem.params:
             format_str = elem.params['format'] \
@@ -288,10 +277,6 @@ def render_text(viewname: str, elem: Element, indent_level=1) -> List[str]:
                 .replace('%S', 'ss') \
                 .replace("'", "\\'")
             props['readonly property string dateFormat'] = prepare_text(format_str)
-
-        if elem.params.get('displayRelative', False):
-            props.pop('readonly property string dateFormat', None)
-            props['text'] = f'Helpers.relative_date({date_param})'
 
     if 'text' not in props:
         # return []
