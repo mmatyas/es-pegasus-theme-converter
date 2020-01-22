@@ -68,12 +68,6 @@ FONT_SIZE_LARGE: str = '0.085'
 
 DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     ('*', '*', '*'): {
-        'rotation': '0',
-        'pos': '0 0',
-        'origin': '0 0',
-        'rotationOrigin': '0 0',
-        'size': '0 0',
-        'visible': 'true',
     },
     ('*', 'image', '*'): {
     },
@@ -128,7 +122,6 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
         'alignment': 'left',
     },
     ('detailed', 'image', 'md_image'): {
-        # 'pos': calculated
         'origin': '0.5 0.5',
         'maxSize': '0.48 0.4',
     },
@@ -139,32 +132,40 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     },
     ('detailed', 'text', 'md_description'): {
         'pos': '0.1 0.65',
-        'fontSize': FONT_SIZE_SMALL,
         'size': '0.48 0',
+        'fontSize': FONT_SIZE_SMALL,
     },
     ('detailed', 'text', 'md_lbl_rating'): {
         'text': "Rating: ",
+        'fontSize': FONT_SIZE_SMALL,
     },
     ('detailed', 'text', 'md_lbl_releasedate'): {
         'text': "Released: ",
+        'fontSize': FONT_SIZE_SMALL,
     },
     ('detailed', 'text', 'md_lbl_developer'): {
         'text': "Developer: ",
+        'fontSize': FONT_SIZE_SMALL,
     },
     ('detailed', 'text', 'md_lbl_publisher'): {
         'text': "Publisher: ",
+        'fontSize': FONT_SIZE_SMALL,
     },
     ('detailed', 'text', 'md_lbl_genre'): {
         'text': "Genre: ",
+        'fontSize': FONT_SIZE_SMALL,
     },
     ('detailed', 'text', 'md_lbl_players'): {
         'text': "Players: ",
+        'fontSize': FONT_SIZE_SMALL,
     },
     ('detailed', 'text', 'md_lbl_lastplayed'): {
         'text': "Last played: ",
+        'fontSize': FONT_SIZE_SMALL,
     },
     ('detailed', 'text', 'md_lbl_playcount'): {
         'text': "Times played: ",
+        'fontSize': FONT_SIZE_SMALL,
     },
 }
 DEFAULT_PROPS[('*', 'datetime', '*')] = {

@@ -284,13 +284,6 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
         'fillMode': 'Image.PreserveAspectFit',
         'smooth': 'false',
     },
-    ('detailed', 'image', 'md_image'): {
-        'source': 'currentGame.assets.boxFront',
-        'smooth': 'true',
-    },
-    # ('detailed', 'image', 'md_marquee'): {
-    #     'source': 'currentGame.assets.marquee',
-    # },
     ('*', 'text', '*'): {
         'textFormat': 'Text.PlainText',
         'color': "'#000'",
@@ -302,9 +295,8 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
         'text': 'modelData.name',
         'visible': '!logo.visible',
     },
-    ('*', 'textlist', 'gamelist'): {
+    ('*', 'textlist', '*'): {
         'readonly property var currentGame': "model.get(currentIndex)",
-        'model': "modelData.games",
         'focus': 'true',
         'highlightMoveDuration': '0',
         'readonly property int highlightHeight': f'{FONT_SIZE_MEDIUM} * 1.5',
@@ -314,9 +306,14 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
         'Keys.onPressed': 'if (!event.isAutoRepeat && api.keys.isAccept(event))'
                           ' { event.accepted = true; currentGame.launch(); }',
     },
-    ('*', 'textlist__delegate', 'gamelist__delegate'): {
+    ('*', 'textlist', 'gamelist'): {
+        'model': "modelData.games",
+    },
+    ('*', 'textlist__delegate', '*'): {
         'width': 'ListView.view.width',
         'elide': 'Text.ElideRight',
+    },
+    ('*', 'textlist__delegate', 'gamelist__delegate'): {
         'text': 'modelData.title',
     },
     ('*', 'rating', 'md_rating'): {
@@ -325,11 +322,21 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     ('*', 'text', 'md_description'): {
         'verticalAlignment': 'Text.AlignTop',
         'wrapMode': 'Text.WordWrap',
+        'height': 'root.height - y',
     },
     ('*', 'helpsystem', '*'): {
         'x': '0.012 * root.width',
         'y': '0.9515 * root.height',
     },
+    ('detailed', 'image', 'md_image'): {
+        'x': 'root.width * 0.25',
+        'y': 'gamelist.y + root.height * 0.2125',
+        'source': 'currentGame.assets.boxFront',
+        'smooth': 'true',
+    },
+    # ('detailed', 'image', 'md_marquee'): {
+    #     'source': 'currentGame.assets.marquee',
+    # },
 }
 DEFAULT_PROPS[('*', 'datetime', '*')] = {
     **DEFAULT_PROPS.get(('*', 'text', '*'), {}),
