@@ -291,6 +291,9 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
         'verticalAlignment': 'Text.AlignVCenter',
         'font.family': 'es_default.name',
     },
+    ('*', 'datetime', '*'): {
+        'text': "Qt.formatDateTime(value, dateFormat) || 'unknown'",
+    },
     ('*', 'text', 'logoText'): {
         'text': 'modelData.name',
         'visible': '!logo.visible',

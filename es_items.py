@@ -167,6 +167,13 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
         'text': "Times played: ",
         'fontSize': FONT_SIZE_SMALL,
     },
+    ('detailed', 'text', 'md_lbl_playcount'): {
+        'text': "Times played: ",
+        'fontSize': FONT_SIZE_SMALL,
+    },
+    ('detailed', 'datetime', 'md_lastplayed'): {
+        'displayRelative': 'true',
+    },
 }
 DEFAULT_PROPS[('*', 'datetime', '*')] = {
     **DEFAULT_PROPS[('*', 'text', '*')],
