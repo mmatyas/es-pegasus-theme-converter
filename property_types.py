@@ -1,7 +1,7 @@
 import os
 import re
 from errors import *
-from static import PropTypes
+from static import PropType
 from typing import Optional, Union
 
 
@@ -22,25 +22,25 @@ class NormPair():
         return f"{self.__class__.__name__} {{ {self.a}, {self.b} }}"
 
 
-#class NormRect():
-#    def __init__(self, prop_str):
-#        fields = prop_str.split(maxsplit=3)
-#        if len(fields) != 2 or len(fields) != 4:
-#            print_error(f"Invalid normalized rectangle: `{prop_str}`")
-#            raise ValueError
-#
-#        try:
-#            if len(fields) == 2:
-#                self.a, self.b = map(float, fields)
-#                self.c, self.d = self.a, self.b
-#            else:
-#                self.a, self.b, self.c, self.d = map(float, fields)
-#        except ValueError:
-#            print_error(f"Invalid normalized pair values: `{prop_str}`")
-#            raise ValueError
-#
-#    def __repr__(self):
-#        return f"{self.__class__.__name__} {{ {self.a}, {self.b}, {self.c}, {self.d} }}"
+class NormRect():
+    def __init__(self, prop_str):
+        fields = prop_str.split(maxsplit=3)
+        if len(fields) != 2 or len(fields) != 4:
+            print_error(f"Invalid normalized rectangle: `{prop_str}`")
+            raise ValueError
+
+        try:
+            if len(fields) == 2:
+                self.a, self.b = map(float, fields)
+                self.c, self.d = self.a, self.b
+            else:
+                self.a, self.b, self.c, self.d = map(float, fields)
+        except ValueError:
+            print_error(f"Invalid normalized rect values: `{prop_str}`")
+            raise ValueError
+
+    def __repr__(self):
+        return f"{self.__class__.__name__} {{ {self.a}, {self.b}, {self.c}, {self.d} }}"
 
 
 class Color():
@@ -61,24 +61,26 @@ class Color():
         return f"#{self.hex}"
 
 
-PropertyType = Union[NormPair, Color, str, float, bool]
+Property = Union[NormPair, NormRect, Color, str, float, bool]
 
 
-def parse_param(basedir, prop_type, prop_str) -> Optional[PropertyType]:
+def parse_param(basedir: str, prop_type: PropType, prop_str: str) -> Optional[Property]:
+    assert(basedir)
+    assert(prop_str)
     try:
-        if prop_type == PropTypes.NORMALIZED_PAIR:
+        if prop_type == PropType.NORMALIZED_PAIR:
             return NormPair(prop_str)
-        if prop_type == PropTypes.NORMALIZED_RECT:
-            return NormPair(prop_str)
-        if prop_type == PropTypes.STRING:
+        if prop_type == PropType.NORMALIZED_RECT:
+            return NormRect(prop_str)
+        if prop_type == PropType.STRING:
             return prop_str
-        if prop_type == PropTypes.PATH:
+        if prop_type == PropType.PATH:
             return os.path.join(basedir, prop_str)
-        if prop_type == PropTypes.COLOR:
+        if prop_type == PropType.COLOR:
             return Color(prop_str)
-        if prop_type == PropTypes.FLOAT:
+        if prop_type == PropType.FLOAT:
             return float(prop_str)
-        if prop_type == PropTypes.BOOLEAN:
+        if prop_type == PropType.BOOLEAN:
             return prop_str.lower()[0] in ['1', 't', 'y']
     except ValueError:
         pass

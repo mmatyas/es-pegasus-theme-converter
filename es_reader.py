@@ -5,7 +5,7 @@ from typing import Dict, List, Set
 
 from errors import *
 from es_items import Platform, Element
-from property_types import parse_param, PropertyType
+from property_types import parse_param, Property
 from static import KNOWN_ELEMENTS, RESERVED_ITEMS, MAX_FORMAT_VERSION
 
 
@@ -77,7 +77,7 @@ def read_view(root_dir, xml_path, variables, viewname, viewnode, view) -> Set[st
             warn(f"{xml_path}: A `{element.tag}` element's `name` field has no items")
             continue
 
-        found_params: Dict[str, PropertyType] = {}
+        found_params: Dict[str, Property] = {}
         is_extra = 'extra' in element.attrib
 
         for param in element:
