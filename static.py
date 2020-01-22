@@ -379,46 +379,53 @@ def add_label_defaults():
         'md_lbl_lastplayed',
         'md_lbl_playcount',
     ]
+
+    column1_x = 0.01
+    column2_x = 0.25
+    row1_y = 0.625
+    column_w = column2_x - column1_x
+
     for idx, label in enumerate(label_order):
         if idx == 0:
-            label_x = '0.01 * root.width'
-            label_y = '0.625 * root.height'
+            label_x = f'{column1_x} * root.width'
+            label_y = f'{row1_y} * root.height'
         elif idx == (len(label_order) / 2):
-            def_key_first = (view, RESERVED_ITEMS[view][label_order[0]], label_order[0])
-            label_x = '0.25 * root.width'
-            label_y = DEFAULT_PROPS[def_key_first]['y']
+            label_x = f'{column2_x} * root.width'
+            label_y = f'{row1_y} * root.height'
         else:
             prev = label_order[idx - 1]
             label_x = f"{prev}.x"
             label_y = f"{prev}.y + {prev}.height"
 
-        label_defaults = {
-            'font.pixelSize': FONT_SIZE_SMALL,
-            'x': label_x,
-            'y': label_y,
-        }
-        def_key = (view, RESERVED_ITEMS[view][label], label)
-        DEFAULT_PROPS[def_key] = {**DEFAULT_PROPS.get(def_key, {}), **label_defaults}
+        def_key = (view, 'text', label)
+        DEFAULT_PROPS.setdefault(def_key, {})
+        DEFAULT_PROPS[def_key]['x'] = label_x
+        DEFAULT_PROPS[def_key]['y'] = label_y
 
     for idx, label in enumerate(label_order):
-        value = label.replace('_lbl', '')
+        value_name = label.replace('_lbl', '')
+        value_type = RESERVED_ITEMS[view][value_name]
+
         value_defaults = {
             'x': f"{label}.x + {label}.width",
             'y': f"{label}.y",
         }
-        if value in texts:
-            value_defaults['height'] = f"{label}.height"
-            value_defaults['width'] = f"0.24 * root.width - {label}.width"
-            value_defaults['font.pixelSize'] = f"{label}.font.pixelSize"
-            value_defaults['elide'] = 'Text.ElideRight'
-        if RESERVED_ITEMS[view][value] == 'rating':
+        if value_name in texts:
+            value_defaults.update({
+                'height': f"{label}.height",
+                'width': f"{column_w} * root.width - {label}.width",
+                'font.pixelSize': f"{label}.font.pixelSize",
+                'elide': 'Text.ElideRight',
+            })
+        if value_type == 'rating':
             value_defaults['height'] = f"{label}.font.pixelSize"
 
-        def_key = (view, RESERVED_ITEMS[view][value], value)
+        def_key = (view, value_type, value_name)
         DEFAULT_PROPS[def_key] = {**DEFAULT_PROPS.get(def_key, {}), **value_defaults}
 
+    last_label = label_order[-1]
     description_key = (view, 'text', 'md_description')
-    DEFAULT_PROPS[description_key]['y'] = f'{label_order[-1]}.y + {label_order[-1]}.height + 0.01 * root.height'
+    DEFAULT_PROPS[description_key]['y'] = f'{last_label}.y + {last_label}.height + 0.01 * root.height'
 
 
 add_label_defaults()
