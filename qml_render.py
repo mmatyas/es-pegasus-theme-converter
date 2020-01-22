@@ -281,7 +281,7 @@ def render_text(viewname: str, elem: Element, indent_level=1) -> List[str]:
             date_param = 'currentGame.lastPlayed'
 
         if 'format' in elem.params:
-            format_str = elem.params \
+            format_str = elem.params['format'] \
                 .replace('%Y', 'yyyy') \
                 .replace('%m', 'MM') \
                 .replace('%d', 'dd') \
@@ -289,7 +289,7 @@ def render_text(viewname: str, elem: Element, indent_level=1) -> List[str]:
                 .replace('%M', 'mm') \
                 .replace('%S', 'ss') \
                 .replace("'", "\\'")
-            props['readonly property string dateFormat'] = format_str
+            props['readonly property string dateFormat'] = prepare_text(format_str)
 
         if elem.params.get('displayRelative', False):
             props.pop('readonly property string dateFormat', None)
