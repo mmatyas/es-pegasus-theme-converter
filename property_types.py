@@ -45,13 +45,13 @@ class NormRect():
 
 class Color():
     def __init__(self, prop_str):
-        res = re.match(r'^[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$', prop_str)
+        res = re.match(r'^([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$', prop_str)
         if not res:
             print_error(f"Invalid color value: `{prop_str}`")
             raise ValueError
 
         self.hex = prop_str
-        # self.hex = res.group(0)
+        self.color = res.group(0)
         if res.group(1):
             self.opacity = int(res.group(1), 16) / 255
         else:
