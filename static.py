@@ -337,6 +337,16 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     # ('detailed', 'image', 'md_marquee'): {
     #     'source': 'currentGame.assets.marquee',
     # },
+    # TODO: release -> releaseDate
+    ('detailed', 'text', 'md_name'): {'text': "currentGame.title"},
+    ('detailed', 'text', 'md_description'): {'text': "currentGame.description"},
+    ('detailed', 'text', 'md_developer'): {'text': "currentGame.developer || 'unknown'"},
+    ('detailed', 'text', 'md_publisher'): {'text': "currentGame.publisher || 'unknown'"},
+    ('detailed', 'text', 'md_genre'): {'text': "currentGame.genre || 'unknown'"},
+    ('detailed', 'text', 'md_players'): {'text': "Helpers.format_players(currentGame.players)"},
+    ('detailed', 'text', 'md_playcount'): {'text': "currentGame.playCount"},
+    ('detailed', 'datetime', 'md_releasedate'): {'readonly property date value': "currentGame.release"},
+    ('detailed', 'datetime', 'md_lastplayed'): {'readonly property date value': "currentGame.lastPlayed"},
 }
 DEFAULT_PROPS[('*', 'datetime', '*')] = {
     **DEFAULT_PROPS.get(('*', 'text', '*'), {}),
@@ -352,22 +362,6 @@ def add_label_defaults():
     global DEFAULT_PROPS
 
     view = 'detailed'
-    texts = {
-        'md_name': "currentGame.title",
-        'md_description': "currentGame.description",
-        # TODO: release -> releaseDate
-        'md_releasedate': "Qt.formatDateTime(currentGame.release, dateFormat) || 'unknown'",
-        'md_developer': "currentGame.developer || 'unknown'",
-        'md_publisher': "currentGame.publisher || 'unknown'",
-        'md_genre': "currentGame.genre || 'unknown'",
-        'md_players': "Helpers.format_players(currentGame.players)",
-        'md_lastplayed': "Helpers.relative_date(currentGame.lastPlayed)",
-        'md_playcount': "currentGame.playCount",
-    }
-    for key, text in texts.items():
-        def_key = (view, RESERVED_ITEMS[view][key], key)
-        DEFAULT_PROPS.setdefault(def_key, {})
-        DEFAULT_PROPS[def_key]['text'] = text
 
     label_order = [
         'md_lbl_rating',
@@ -410,7 +404,7 @@ def add_label_defaults():
             'x': f"{label}.x + {label}.width",
             'y': f"{label}.y",
         }
-        if value_name in texts:
+        if value_type == 'text' or value_type == 'datetime':
             value_defaults.update({
                 'height': f"{label}.height",
                 'width': f"{column_w} * root.width - {label}.width",
