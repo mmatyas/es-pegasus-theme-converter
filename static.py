@@ -286,6 +286,7 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     },
     ('detailed', 'image', 'md_image'): {
         'source': 'currentGame.assets.boxFront',
+        'smooth': 'true',
     },
     # ('detailed', 'image', 'md_marquee'): {
     #     'source': 'currentGame.assets.marquee',
