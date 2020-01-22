@@ -2,6 +2,7 @@ import re
 from static import *
 from errors import *
 from typing import Dict, List
+from es_items import Element
 
 
 def print_debug(elem):
@@ -26,12 +27,12 @@ def prepare_text(text: str) -> str:
     return f"'{prop_str}'"
 
 
-def get_defaults(viewtype: str, elemtype: str, elemname: str) -> Dict[str, str]:
+def get_defaults(viewname: str, elemtype: str, elemname: str) -> Dict[str, str]:
     keys = [
         ('*', elemtype, '*'),
-        (viewtype, elemtype, '*'),
+        (viewname, elemtype, '*'),
         ('*', elemtype, elemname),
-        (viewtype, elemtype, elemname),
+        (viewname, elemtype, elemname),
     ]
     retval: Dict[str, str] = {}
     for key in keys:
@@ -40,7 +41,7 @@ def get_defaults(viewtype: str, elemtype: str, elemname: str) -> Dict[str, str]:
     return retval
 
 
-def es_zorder(viewtype: str, elem) -> int:
+def es_zorder(viewname: str, elem: Element) -> int:
     if 'zIndex' in elem.params:
         return int(elem.params['zIndex'])
 
@@ -53,7 +54,7 @@ def render_props(props: Dict[str, str], indent=1) -> List[str]:
     return lines
 
 
-def render_prop_id(elem, props: Dict[str, str]):
+def render_prop_id(elem: Element, props: Dict[str, str]):
     clean_str = re.sub('[^a-zA-Z0-9_]+', '_', elem.name)
     props['id'] = clean_str[0].lower() + clean_str[1:]
 
@@ -62,7 +63,7 @@ def render_prop_id(elem, props: Dict[str, str]):
     #     props['id'] = 'x_' + props['id']  # to avoid illegal JS names
 
 
-def render_prop_pos(elem, props: Dict[str, str]):
+def render_prop_pos(elem: Element, props: Dict[str, str]):
     if 'pos' in elem.params:
         pair = elem.params['pos']
 
@@ -84,7 +85,7 @@ def render_prop_pos(elem, props: Dict[str, str]):
                 props['y'] = f"{props['y']} - {origin.b} * height"
 
 
-def render_prop_rotation(elem, props: Dict[str, str]):
+def render_prop_rotation(elem: Element, props: Dict[str, str]):
     if 'rotation' in elem.params:
         angle = elem.params['rotation']
         origin = [0.5, 0.5]
@@ -99,18 +100,18 @@ def render_prop_rotation(elem, props: Dict[str, str]):
             }}"
 
 
-def render_prop_zindex(elem, props: Dict[str, str]):
+def render_prop_zindex(elem: Element, props: Dict[str, str]):
     if 'zIndex' in elem.params:
         props['z'] = elem.params['zIndex']
 
 
-def render_prop_visible(elem, props: Dict[str, str]):
+def render_prop_visible(elem: Element, props: Dict[str, str]):
     if 'visible' in elem.params:
         if not elem.params['visible']:
             props['visible'] = "false"
 
 
-def render_prop_opacity(elem, props: Dict[str, str]):
+def render_prop_opacity(elem: Element, props: Dict[str, str]):
     if 'color' in elem.params:
         color = elem.params['color']
         if len(color.hex) == 8:
@@ -135,7 +136,7 @@ def create_rgba_color(color) -> str:
     return f"'#{color.hex[6:]}{color.hex[0:6]}'"
 
 
-def render_prop_fontinfo(elem, props: Dict[str, str]):
+def render_prop_fontinfo(elem: Element, props: Dict[str, str]):
     if 'fontPath' in elem.params:
         value = elem.params['fontPath']
         font_id = font_path_to_name(value)
@@ -152,7 +153,7 @@ def render_prop_fontinfo(elem, props: Dict[str, str]):
         props['font.pixelSize'] = f"{size} * root.height"
 
 
-def render_prop_textinfo(elem, props: Dict[str, str]):
+def render_prop_textinfo(elem: Element, props: Dict[str, str]):
     if 'alignment' in elem.params:
         if elem.params['alignment'] == 'center':
             props['horizontalAlignment'] = "Text.AlignHCenter"
@@ -168,8 +169,8 @@ def render_prop_textinfo(elem, props: Dict[str, str]):
         props['lineHeight'] = elem.params['lineSpacing']
 
 
-def render_image(viewtype: str, elem, indent_level=1) -> List[str]:
-    props = get_defaults(viewtype, elem.type, elem.name)
+def render_image(viewname: str, elem: Element, indent_level=1) -> List[str]:
+    props = get_defaults(viewname, elem.type, elem.name)
 
     render_prop_id(elem, props)
     render_prop_pos(elem, props)
@@ -216,7 +217,7 @@ def render_image(viewtype: str, elem, indent_level=1) -> List[str]:
     if elem.name == 'logo' and 'origin' not in elem.params:
         props['x'] = f"{props['x']} - 0.5 * width"
     # md_image: 0.5/0.5
-    if viewtype == 'detailed' and elem.name == 'md_image' and 'origin' not in elem.params:
+    if viewname == 'detailed' and elem.name == 'md_image' and 'origin' not in elem.params:
         props['x'] = f"{props['x']} - 0.5 * width"
         props['y'] = f"{props['y']} - 0.5 * height"
 
@@ -237,8 +238,8 @@ def render_image(viewtype: str, elem, indent_level=1) -> List[str]:
     return lines
 
 
-def render_text(viewtype: str, elem, indent_level=1) -> List[str]:
-    props = get_defaults(viewtype, elem.type, elem.name)
+def render_text(viewname: str, elem: Element, indent_level=1) -> List[str]:
+    props = get_defaults(viewname, elem.type, elem.name)
     childs = []
 
     render_prop_id(elem, props)
@@ -303,8 +304,8 @@ def render_text(viewtype: str, elem, indent_level=1) -> List[str]:
     ]
 
 
-def render_rating(viewtype: str, elem, indent_level=1) -> List[str]:
-    props = get_defaults(viewtype, elem.type, elem.name)
+def render_rating(viewname: str, elem: Element, indent_level=1) -> List[str]:
+    props = get_defaults(viewname, elem.type, elem.name)
 
     render_prop_id(elem, props)
     render_prop_pos(elem, props)
@@ -342,8 +343,8 @@ def render_rating(viewtype: str, elem, indent_level=1) -> List[str]:
     return lines
 
 
-def render_helpsystem(viewtype: str, elem, indent_level=1) -> List[str]:
-    props = get_defaults(viewtype, elem.type, elem.name)
+def render_helpsystem(viewname: str, elem: Element, indent_level=1) -> List[str]:
+    props = get_defaults(viewname, elem.type, elem.name)
 
     render_prop_id(elem, props)
     render_prop_pos(elem, props)
@@ -362,9 +363,9 @@ def render_helpsystem(viewtype: str, elem, indent_level=1) -> List[str]:
     ]
 
 
-def render_textlist(viewtype: str, elem, indent_level=1) -> List[str]:
-    list_props = get_defaults(viewtype, elem.type, elem.name)
-    delegate_props = get_defaults(viewtype, elem.type + '__delegate', elem.name + '__delegate')
+def render_textlist(viewname: str, elem: Element, indent_level=1) -> List[str]:
+    list_props = get_defaults(viewname, elem.type, elem.name)
+    delegate_props = get_defaults(viewname, elem.type + '__delegate', elem.name + '__delegate')
 
     render_prop_id(elem, list_props)
     render_prop_pos(elem, list_props)
@@ -427,9 +428,9 @@ def render_textlist(viewtype: str, elem, indent_level=1) -> List[str]:
     ]
 
 
-def render_view_items(viewtype: str, platform_name, elems) -> List[str]:
-    elems = sorted(elems, key=lambda elem: es_zorder(viewtype, elem))
-    # print(f"  - {viewtype}: {len(elems)} elem")
+def render_view_items(viewname: str, platform_name: str, elems: List[Element]) -> List[str]:
+    elems = sorted(elems, key=lambda elem: es_zorder(viewname, elem))
+    # print(f"  - {viewname}: {len(elems)} elem")
     lines = [
         "id: root",
         "enabled: focus",
@@ -437,23 +438,23 @@ def render_view_items(viewtype: str, platform_name, elems) -> List[str]:
         "clip: true",
     ]
 
-    if viewtype != 'system':
-        if viewtype == 'grid':
+    if viewname != 'system':
+        if viewname == 'grid':
             holder = 'gamegrid'
         else:
             holder = 'gamelist'
         lines.append(f"readonly property alias currentGame: {holder}.currentGame")
 
-    reserved_items: Dict[str, str] = RESERVED_ITEMS.get(viewtype, {})
+    reserved_items: Dict[str, str] = RESERVED_ITEMS.get(viewname, {})
 
     for elem in elems:
         if elem.is_extra:
             if elem.name in RESTRICTED_TYPES:
-                warn(f"{platform_name}, {viewtype} view: `{elem.name}` cannot be created as an extra element, "
+                warn(f"{platform_name}, {viewname} view: `{elem.name}` cannot be created as an extra element, "
                      "because it doesn't have anything to display on its own")
                 continue
             if elem.name in reserved_items:
-                warn(f"{platform_name}, {viewtype} view: `{elem.name}` is marked as extra, "
+                warn(f"{platform_name}, {viewname} view: `{elem.name}` is marked as extra, "
                      f"but there's a non-extra item with the same name. This isn't well supported "
                      "at the moment, expect issues.")
                 # elem.is_extra = False
@@ -461,37 +462,37 @@ def render_view_items(viewtype: str, platform_name, elems) -> List[str]:
 
         if not elem.is_extra:
             if elem.name not in reserved_items:
-                warn(f"{platform_name}, {viewtype} view: `{elem.name}` is not marked as extra, "
+                warn(f"{platform_name}, {viewname} view: `{elem.name}` is not marked as extra, "
                      f"but no items with such name exist in this view. Entry ignored.")
                 continue
 
             expected_type = reserved_items[elem.name]
             if elem.type != expected_type:
-                warn(f"{platform_name}, {viewtype} view: `{elem.type}` properties are set for `{elem.name}`, "
+                warn(f"{platform_name}, {viewname} view: `{elem.type}` properties are set for `{elem.name}`, "
                      f"but the type of that is `{expected_type}`. Properties ignored.")
                 continue
 
-        # print(platform_name, viewtype, elem.type, elem.name)
+        # print(platform_name, viewname, elem.type, elem.name)
 
         if elem.type == 'image':
-            if not (viewtype == 'system' and elem.name == 'logo'):
-                lines.extend(render_image(viewtype, elem))
+            if not (viewname == 'system' and elem.name == 'logo'):
+                lines.extend(render_image(viewname, elem))
             continue
         if elem.type == 'text':
-            if not (viewtype == 'system' and elem.name in ['systemInfo', 'logoText']):
-                lines.extend(render_text(viewtype, elem))
+            if not (viewname == 'system' and elem.name in ['systemInfo', 'logoText']):
+                lines.extend(render_text(viewname, elem))
             continue
         if elem.type == 'datetime':
-            lines.extend(render_text(viewtype, elem))
+            lines.extend(render_text(viewname, elem))
             continue
         if elem.type == 'rating':
-            lines.extend(render_rating(viewtype, elem))
+            lines.extend(render_rating(viewname, elem))
             continue
         if elem.type == 'helpsystem':
-            lines.extend(render_helpsystem(viewtype, elem))
+            lines.extend(render_helpsystem(viewname, elem))
             continue
         if elem.type == 'textlist':
-            lines.extend(render_textlist(viewtype, elem))
+            lines.extend(render_textlist(viewname, elem))
             continue
         print_debug(elem)
 
