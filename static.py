@@ -321,6 +321,7 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     },
     ('*', 'rating', 'md_rating'): {
         'percentage': 'currentGame.rating',
+        'width': 'height * 5',
     },
     ('*', 'text', 'md_description'): {
         'verticalAlignment': 'Text.AlignTop',
