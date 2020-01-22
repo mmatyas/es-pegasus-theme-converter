@@ -88,6 +88,9 @@ def render_prop_pos(elem: Element, props: Dict[str, str]):
 def render_prop_rotation(elem: Element, props: Dict[str, str]):
     if 'rotation' in elem.params:
         angle = elem.params['rotation']
+        if angle == 0.0:
+            return
+
         origin = [0.5, 0.5]
         if 'rotationOrigin' in elem.params:
             pair = elem.params['rotationOrigin']
