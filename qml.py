@@ -4,60 +4,36 @@ from static import *
 from es_items import Element
 
 
-def extend_with_defaults(viewtype, elems):
-    def add_maybe(name, kind, elems):
-        if name in elems:
-            return
-#        for elem in elems:
-#            # FIXME: handle non-extra items marked as extra
-#            # if elem.name == name and elem.type == kind and not elem['is_extra']:
-#            if elem.name == name and elem.type == kind:
-#                # elem['is_extra'] = False
-#                return
+def create_qml_defaults(default_views, out_files):
+    for viewname in default_views:
+        if viewname not in SUPPORTED_VIEWS:
+            continue
 
-        elems[name] = Element(name, kind)
+        lines = render_view_items(viewname, None, default_views[viewname].values())
 
-    default_elems = RESERVED_ITEMS.get(viewtype, {})
-
-    if viewtype == 'system':
-        default_elems = RESERVED_ITEMS[viewtype].copy()
-        default_elems.pop('logo')
-        default_elems.pop('logoText')
-
-    for ename, etype in default_elems.items():
-        add_maybe(ename, etype, elems)
-
-
-def create_qml_defaults(out_files):
-    for viewtype in ['system', 'detailed']:
-        items = {}
-        extend_with_defaults(viewtype, items)
-
-        lines = render_view_items(viewtype, None, items.values())
         import_lines = 5
         lines.insert(import_lines, "  Rectangle { anchors.fill: parent; color: '#fff' }")
 
-        filepath = os.path.join('__components', 'Missing' + viewtype.title() + 'View.qml')
+        filepath = os.path.join('__components', 'Missing' + viewname.title() + 'View.qml')
         out_files[filepath] = '\n'.join(lines)
 
 
 def create_qml_platform_views(platform, out_files):
-    for viewtype in platform.views:
-        if viewtype not in SUPPORTED_VIEWS:
+    for viewname in platform.views:
+        if viewname not in SUPPORTED_VIEWS:
             continue
 
-        extend_with_defaults(viewtype, platform.views[viewtype])
-        lines = render_view_items(viewtype, platform.name, platform.views[viewtype].values())
+        lines = render_view_items(viewname, platform.name, platform.views[viewname].values())
 
-        filepath = os.path.join(platform.name, viewtype + '.qml')
+        filepath = os.path.join(platform.name, viewname + '.qml')
         out_files[filepath] = '\n'.join(lines)
 
 
 def collect_fonts(ui_platforms):
     paths = []
     for platform in ui_platforms:
-        for viewtype in platform.views:
-            for elem in platform.views[viewtype].values():
+        for viewname in platform.views:
+            for elem in platform.views[viewname].values():
                 if 'fontPath' in elem.params:
                     paths.append(elem.params['fontPath'])
 
@@ -83,8 +59,8 @@ def collect_platform_views(ui_platforms) -> Dict[str, List[str]]:
     for platform in ui_platforms:
         pname = platform.name
         views[pname] = []
-        for viewtype in platform.views:
-            views[pname].append(viewtype)
+        for viewname in platform.views:
+            views[pname].append(viewname)
     return views
 
 
@@ -120,17 +96,17 @@ def fill_templates(ui_platforms, out_files):
         .replace('$$PLATFORMS_WITH_SYSTEMS$$', platforms_w_system_str)
 
 
-def create_qml(theme_name, ui_platforms) -> Dict[str, str]:
+def create_qml(theme_name, platforms, default_views) -> Dict[str, str]:
     out_files: Dict[str, str] = {}
 
-    create_qml_defaults(out_files)
-    for platform in ui_platforms:
+    create_qml_defaults(default_views, out_files)
+    for platform in platforms:
         create_qml_platform_views(platform, out_files)
 
     for path, contents in STATIC_FILES.items():
         out_files[path] = contents.strip()
 
-    fill_templates(ui_platforms, out_files)
+    fill_templates(platforms, out_files)
 
     lines = [
         "name: " + theme_name,

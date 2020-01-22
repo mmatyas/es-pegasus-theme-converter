@@ -9,7 +9,7 @@ from typing import Dict
 
 from errors import *
 from qml import create_qml
-from es_reader import find_platforms
+from es_reader import find_platforms, create_default_views
 
 
 def print_systems(ui_platforms):
@@ -91,8 +91,9 @@ if __name__ == "__main__":
 
     theme_name = os.path.basename(os.path.abspath(args.INPUTDIR))
     platforms = find_platforms(args.INPUTDIR)
+    default_views = create_default_views(args.INPUTDIR)
 
-    out_files = create_qml(theme_name, platforms)
+    out_files = create_qml(theme_name, platforms, default_views)
     if args.OUTPUTDIR:
         dump_files(out_files, args.OUTPUTDIR)
         copy_resources(args.OUTPUTDIR)
