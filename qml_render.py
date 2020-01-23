@@ -469,7 +469,7 @@ def render_view_items(viewname: str, platform_name: str, elems: List[Element]) -
 
     for elem in elems:
         if elem.is_extra:
-            if elem.name in RESTRICTED_TYPES:
+            if elem.type in RESTRICTED_TYPES:
                 warn(f"{platform_name}, {viewname} view: `{elem.name}` cannot be created as an extra element, "
                      "because it doesn't have anything to display on its own")
                 continue
