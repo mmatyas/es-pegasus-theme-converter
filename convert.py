@@ -95,6 +95,7 @@ if __name__ == "__main__":
 
     out_files = create_qml(theme_name, platforms, default_views)
     if args.OUTPUTDIR:
+        print_info("Writing files...")
         dump_files(out_files, args.OUTPUTDIR)
         copy_resources(args.OUTPUTDIR)
 
