@@ -235,6 +235,7 @@ RESERVED_ITEMS: Dict[str, Dict[str, str]] = {
 # These depend on data to display, and cannot be created as extra
 RESTRICTED_TYPES: List[str] = [
     'datetime',
+    'rating',
     'carousel',
     'imagegrid',
     'textlist',
@@ -320,7 +321,6 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
         'text': 'modelData.title',
     },
     ('*', 'rating', 'md_rating'): {
-        'percentage': 'currentGame.rating',
         'width': 'height * 5',
     },
     ('*', 'text', 'md_description'): {
@@ -351,6 +351,7 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     ('detailed', 'text', 'md_playcount'): {'text': "currentGame.playCount"},
     ('detailed', 'datetime', 'md_releasedate'): {'readonly property date value': "currentGame.release"},
     ('detailed', 'datetime', 'md_lastplayed'): {'readonly property date value': "currentGame.lastPlayed"},
+    ('detailed', 'rating', 'md_rating'): {'percentage': 'currentGame.rating'},
 }
 DEFAULT_PROPS[('*', 'datetime', '*')] = {
     **DEFAULT_PROPS.get(('*', 'text', '*'), {}),
