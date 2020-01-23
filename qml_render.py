@@ -222,7 +222,7 @@ def render_image(viewname: str, elem: Element, indent_level=1) -> List[str]:
         *render_props(props),
         "}"
     ]
-    if 'opacity' not in elem.params:
+    if 'opacity' not in props:
         lines.insert(len(lines) - 1, '  Behavior on opacity { NumberAnimation { duration: 120 } }')
 
     render_prop_color_overlay(elem, props['id'], lines)
