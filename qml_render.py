@@ -122,17 +122,38 @@ def render_prop_opacity(elem: Element, props: Dict[str, str]):
             props['opacity'] = str(alpha / 255.0)
 
 
-def render_prop_color_overlay(elem, elem_id: str, lines: List[str]):
-    if 'color' in elem.params:
-        props = {}
-        props['anchors.fill'] = elem_id
-        props['source'] = elem_id
-        props['color'] = f"'#{elem.params['color'].color}'"
-        lines.extend([
-            "ColorOverlay {",
-            *render_props(props),
-            "}",
-        ])
+def render_prop_color_overlay(elem, elem_id: str) -> List[str]:
+    colorfill_id = 'color_' + elem_id
+    props = {
+        'id': colorfill_id,
+        'anchors.fill': elem_id,
+        'color': f"'#{elem.params['color'].color}'",
+        'visible': 'false',
+    }
+    lines = [
+        "Rectangle {",
+        *render_props(props),
+        "}",
+    ]
+
+    props = {
+        'anchors.fill': elem_id,
+        'source': elem_id,
+        'foregroundSource': colorfill_id,
+        'mode': "'multiply'",
+    }
+
+    opacity = elem.params['color'].opacity
+    if opacity < 1.0:
+        props['opacity'] = opacity
+
+    lines.extend([
+        "Blend {",
+        *render_props(props),
+        "}",
+    ])
+
+    return lines
 
 
 def create_rgba_color(color) -> str:
@@ -174,6 +195,7 @@ def render_prop_textinfo(elem: Element, props: Dict[str, str]):
 
 def render_image(viewname: str, elem: Element) -> List[str]:
     props = get_defaults(viewname, elem.type, elem.name)
+    sibling_lines = []
 
     render_prop_id(elem, props)
     render_prop_pos(elem, props)
@@ -217,15 +239,19 @@ def render_image(viewname: str, elem: Element) -> List[str]:
         # return []
         pass
 
+    if 'color' in elem.params:
+        props['visible'] = 'false'
+        props.pop('opacity', None)
+        sibling_lines = render_prop_color_overlay(elem, props['id'])
+
     lines = [
         "Image {",
         *render_props(props),
-        "}"
+        "}",
+        *sibling_lines,
     ]
-    if 'opacity' not in props:
+    if 'opacity' not in props and 'visible' not in props:
         lines.insert(len(lines) - 1, '  Behavior on opacity { NumberAnimation { duration: 120 } }')
-
-    render_prop_color_overlay(elem, props['id'], lines)
 
     return lines
 
@@ -292,6 +318,7 @@ def render_text(viewname: str, elem: Element) -> List[str]:
 
 def render_rating(viewname: str, elem: Element) -> List[str]:
     props = get_defaults(viewname, elem.type, elem.name)
+    sibling_lines = []
 
     render_prop_id(elem, props)
     render_prop_pos(elem, props)
@@ -319,12 +346,18 @@ def render_rating(viewname: str, elem: Element) -> List[str]:
 #        elif pair.b != 0.0:
 #            props['width'] = 'height * 5'
 #            props['height'] = f"{pair.b} * root.height"
+
+    if 'color' in elem.params:
+        props['visible'] = 'false'
+        props.pop('opacity', None)
+        sibling_lines = render_prop_color_overlay(elem, props['id'])
+
     lines = [
         "RatingBar {",
         *render_props(props),
         "}",
+        *sibling_lines,
     ]
-    render_prop_color_overlay(elem, props['id'], lines)
 
     return lines
 
