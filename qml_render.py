@@ -216,8 +216,10 @@ def render_image(viewname: str, elem: Element) -> List[str]:
 
         if has_width and not has_height:
             props['width'] = f"{pair.a} * root.width"
+            props['height'] = "width * (implicitHeight || 1) / (implicitWidth || 1)"
 
         if not has_width and has_height:
+            props['width'] = "height * (implicitWidth || 1) / (implicitHeight || 1)"
             props['height'] = f"{pair.b} * root.height"
 
     elif 'maxSize' in elem.params:
