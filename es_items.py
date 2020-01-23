@@ -10,9 +10,9 @@ class Platform():
 
 
 class Element():
-    def __init__(self, name, type):
+    def __init__(self, name, typename):
         self.name = name
-        self.type = type
+        self.type = typename
         self.is_extra = False
         self.params: Dict[str, Property] = {}
 
@@ -161,10 +161,6 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     },
     ('detailed', 'text', 'md_lbl_lastplayed'): {
         'text': "Last played: ",
-        'fontSize': FONT_SIZE_SMALL,
-    },
-    ('detailed', 'text', 'md_lbl_playcount'): {
-        'text': "Times played: ",
         'fontSize': FONT_SIZE_SMALL,
     },
     ('detailed', 'text', 'md_lbl_playcount'): {

@@ -3,7 +3,7 @@ import re
 import xml.etree.ElementTree as ET
 from typing import Dict, List, Set
 
-from errors import *
+from errors import print_info, print_error, warn
 from es_items import Platform, Element, create_default_views
 from property_types import parse_param, Property
 from static import KNOWN_ELEMENTS, RESERVED_ITEMS, MAX_FORMAT_VERSION
@@ -49,7 +49,28 @@ def replace_variables(text, variables):
     return text
 
 
-def read_view(root_dir, xml_path, variables, viewname, viewnode, view) -> Set[str]:
+def parse_view_item_property(curr_dir: str, variables: Dict[str, str], itemtype: str, param: ET.Element) -> Property:
+    if param.tag not in KNOWN_ELEMENTS[itemtype]:
+        raise ValueError(f"Unknown or unsupported element parameter `{param.tag}` for `{itemtype}`")
+
+    text = param.text.strip() if param.text else None
+    if not text:
+        raise ValueError(f"Empty element parameter `{param.tag}` for `{itemtype}`")
+
+    text = replace_variables(text, variables)
+    if not text:
+        raise ValueError(f"After replacing the variables, `{param.tag}` for `{itemtype}` is empty")
+
+    param_type = KNOWN_ELEMENTS[itemtype][param.tag]
+    param_obj = parse_param(curr_dir, param_type, text)
+    if param_obj is None:
+        raise ValueError(f"Could not process element parameter `{param.tag}` "
+                         f"for `{itemtype}` with value `{text}`")
+
+    return param_obj
+
+
+def read_view(xml_path, variables, viewname, viewnode, view) -> Set[str]:
     unsupported_elems = set()
 
     curr_dir = os.path.dirname(xml_path)
@@ -66,7 +87,6 @@ def read_view(root_dir, xml_path, variables, viewname, viewnode, view) -> Set[st
             unsupported_elems.add(element.tag)
             continue
 
-        text = element.text.strip() if element.text else None
         if 'name' not in element.attrib:
             warn(f"{xml_path}: A `{element.tag}` element has no `name` field")
             continue
@@ -77,33 +97,14 @@ def read_view(root_dir, xml_path, variables, viewname, viewnode, view) -> Set[st
             warn(f"{xml_path}: A `{element.tag}` element's `name` field has no items")
             continue
 
-        found_params: Dict[str, Property] = {}
         is_extra = 'extra' in element.attrib
-
+        found_params: Dict[str, Property] = {}
         for param in element:
-            if param.tag not in KNOWN_ELEMENTS[element.tag]:
-                warn(f"{xml_path}: Unknown or unsupported element parameter `{param.tag}` for `{element.tag}`")
+            try:
+                found_params[param.tag] = parse_view_item_property(curr_dir, variables, element.tag, param)
+            except ValueError as e:
+                warn(f"{xml_path}: {e}")
                 continue
-
-            param_type = KNOWN_ELEMENTS[element.tag][param.tag]
-
-            text = param.text.strip() if param.text else None
-            if not text:
-                warn(f"{xml_path}: Empty element parameter `{param.tag}` for `{element.tag}`")
-                continue
-
-            text = replace_variables(text, variables)
-            if not text:
-                warn(f"{xml_path}: After replacing the variables, `{param.tag}` for `{element.tag}` is empty")
-                continue
-
-            param_obj = parse_param(curr_dir, param_type, text)
-            if param_obj is None:
-                print_error(f"{xml_path}: Could not process element parameter `{param.tag}` "
-                            f"for `{element.tag}` with value `{text}`")
-                continue
-
-            found_params[param.tag] = param_obj
 
         for itemname in affected_items:
             expected_type = RESERVED_ITEMS.get(viewname, {}).get(itemname)
@@ -196,7 +197,7 @@ def read_theme_xml(root_dir, xml_path, variables, views, check_version=True) -> 
                 if viewname not in RESERVED_ITEMS:
                     continue
                 views.setdefault(viewname, {})
-                unsupported_elems = read_view(root_dir, xml_path, variables, viewname, viewnode, views[viewname])
+                unsupported_elems = read_view(xml_path, variables, viewname, viewnode, views[viewname])
                 all_unsupported_elems.update(unsupported_elems)
 
     # print_info(f'  - returning from `{xml_path}`...')
@@ -204,17 +205,18 @@ def read_theme_xml(root_dir, xml_path, variables, views, check_version=True) -> 
 
 
 def find_theme_xmls(root_dir: str) -> Dict[str, str]:
+    xml_filename = 'theme.xml'
     theme_xmls: Dict[str, str] = {}
 
     _, platform_dirs, root_files = next(os.walk(root_dir))
+
     for dirname in platform_dirs:
-        theme_xml_path = os.path.join(root_dir, dirname, 'theme.xml')
+        theme_xml_path = os.path.join(root_dir, dirname, xml_filename)
         if os.path.isfile(theme_xml_path):
             theme_xmls[dirname] = theme_xml_path
 
-    fallback_xml_path = os.path.join(root_dir, 'theme.xml')
-    if os.path.isfile(fallback_xml_path):
-        theme_xmls['__generic'] = fallback_xml_path
+    if xml_filename in root_files:
+        theme_xmls['__generic'] = os.path.join(root_dir, xml_filename)
 
     return theme_xmls
 

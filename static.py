@@ -408,7 +408,7 @@ def add_label_defaults():
             'x': f"{label}.x + {label}.width",
             'y': f"{label}.y",
         }
-        if value_type == 'text' or value_type == 'datetime':
+        if value_type in ['text', 'datetime']:
             value_defaults.update({
                 'height': f"{label}.height",
                 'width': f"{column_w} * root.width - {label}.width",

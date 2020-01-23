@@ -1,6 +1,6 @@
 import re
-from static import *
-from errors import *
+from static import DEFAULT_PROPS, DEFAULT_ZORDERS, RESERVED_ITEMS, RESTRICTED_TYPES
+from errors import warn
 from typing import Dict, List
 from es_items import Element
 
@@ -41,7 +41,7 @@ def get_defaults(viewname: str, elemtype: str, elemname: str) -> Dict[str, str]:
     return retval
 
 
-def es_zorder(viewname: str, elem: Element) -> int:
+def es_zorder(elem: Element) -> int:
     if 'zIndex' in elem.params:
         return int(elem.params['zIndex'])
 
@@ -172,7 +172,7 @@ def render_prop_textinfo(elem: Element, props: Dict[str, str]):
         props['lineHeight'] = elem.params['lineSpacing']
 
 
-def render_image(viewname: str, elem: Element, indent_level=1) -> List[str]:
+def render_image(viewname: str, elem: Element) -> List[str]:
     props = get_defaults(viewname, elem.type, elem.name)
 
     render_prop_id(elem, props)
@@ -230,7 +230,7 @@ def render_image(viewname: str, elem: Element, indent_level=1) -> List[str]:
     return lines
 
 
-def render_text(viewname: str, elem: Element, indent_level=1) -> List[str]:
+def render_text(viewname: str, elem: Element) -> List[str]:
     props = get_defaults(viewname, elem.type, elem.name)
     childs = []
 
@@ -290,7 +290,7 @@ def render_text(viewname: str, elem: Element, indent_level=1) -> List[str]:
     ]
 
 
-def render_rating(viewname: str, elem: Element, indent_level=1) -> List[str]:
+def render_rating(viewname: str, elem: Element) -> List[str]:
     props = get_defaults(viewname, elem.type, elem.name)
 
     render_prop_id(elem, props)
@@ -329,7 +329,7 @@ def render_rating(viewname: str, elem: Element, indent_level=1) -> List[str]:
     return lines
 
 
-def render_helpsystem(viewname: str, elem: Element, indent_level=1) -> List[str]:
+def render_helpsystem(viewname: str, elem: Element) -> List[str]:
     props = get_defaults(viewname, elem.type, elem.name)
 
     render_prop_id(elem, props)
@@ -349,7 +349,7 @@ def render_helpsystem(viewname: str, elem: Element, indent_level=1) -> List[str]
     ]
 
 
-def render_textlist(viewname: str, elem: Element, indent_level=1) -> List[str]:
+def render_textlist(viewname: str, elem: Element) -> List[str]:
     list_props = get_defaults(viewname, elem.type, elem.name)
     delegate_props = get_defaults(viewname, elem.type + '__delegate', elem.name + '__delegate')
 
@@ -416,7 +416,7 @@ def render_textlist(viewname: str, elem: Element, indent_level=1) -> List[str]:
 
 def render_view_items(viewname: str, platform_name: str, elems: List[Element]) -> List[str]:
     elems = sorted(elems, key=lambda elem: elem.name)
-    elems = sorted(elems, key=lambda elem: es_zorder(viewname, elem))
+    elems = sorted(elems, key=es_zorder)
     # print(f"  - {viewname}: {len(elems)} elem")
     lines = [
         "id: root",

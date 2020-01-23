@@ -4,17 +4,16 @@ import argparse
 import os
 import sys
 from distutils.dir_util import copy_tree
-from datetime import datetime
 from typing import Dict
 
-from errors import *
+from errors import print_info
 from qml import create_qml
 from es_reader import find_platforms, create_default_views
 
 
 def print_systems(ui_platforms):
     for system in ui_platforms:
-        print_info("Platform:", system['name'])
+        print_info("Platform: " + system['name'])
         if system['variables']:
             print_info("Variables:")
             for k, v in system['variables'].items():
@@ -42,7 +41,7 @@ def has_structural_similarity(ui_platforms):
             if len(elems) != len(ui_platforms[0]['views'][viewtype]):
                 print_info(f"{system['name']}: {len(elems)} != {len(ui_platforms[0]['views'][viewtype])}")
                 return False
-            for idx in range(len(elems)):
+            for idx, _ in enumerate(elems):
                 if elems[idx]['type'] != ui_platforms[0]['views'][viewtype][idx]['type']:
                     print_info(f"{system['name']}: at idx {idx} {elems[idx]['type']} != {ui_platforms[0]['views'][viewtype][idx]['type']}")
                     return False
@@ -60,7 +59,7 @@ def dump_files(files: Dict[str, str], out_root: str):
 
     idx_cur = 0
     # idx_max = len(out_files)
-    for relpath, contents in out_files.items():
+    for relpath, contents in files.items():
         actual_path = os.path.join(out_root, relpath)
         os.makedirs(os.path.dirname(actual_path), exist_ok=True)
         with open(actual_path, 'wt') as file:
@@ -86,7 +85,7 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
 
     theme_name = os.path.basename(os.path.abspath(args.INPUTDIR))
@@ -100,3 +99,7 @@ if __name__ == "__main__":
         copy_resources(args.OUTPUTDIR)
 
     # print(has_structural_similarity(ui_platforms))
+
+
+if __name__ == "__main__":
+    main()
