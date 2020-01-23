@@ -46,9 +46,9 @@ class Color():
             raise ValueError(f"Invalid color value: `{prop_str}`")
 
         self.hex = prop_str
-        self.color = res.group(0)
-        if res.group(1):
-            self.opacity = int(res.group(1), 16) / 255
+        self.color = res.group(1)
+        if res.group(2):
+            self.opacity = int(res.group(2), 16) / 255
         else:
             self.opacity = 1.0
 
