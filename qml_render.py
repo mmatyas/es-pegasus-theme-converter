@@ -127,7 +127,7 @@ def render_prop_color_overlay(elem, elem_id: str, lines: List[str]):
         props = {}
         props['anchors.fill'] = elem_id
         props['source'] = elem_id
-        props['color'] = create_rgba_color(elem.params['color'])
+        props['color'] = f"'#{elem.params['color'].color}'"
         lines.extend([
             "ColorOverlay {",
             *render_props(props),
