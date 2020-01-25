@@ -70,7 +70,7 @@ def parse_param(basedir: str, prop_type: PropType, prop_str: str) -> Optional[Pr
         if prop_type == PropType.STRING:
             return prop_str
         if prop_type == PropType.PATH:
-            return os.path.join(basedir, prop_str)
+            return os.path.normpath(os.path.join(basedir, prop_str))
         if prop_type == PropType.COLOR:
             return Color(prop_str)
         if prop_type == PropType.FLOAT:
