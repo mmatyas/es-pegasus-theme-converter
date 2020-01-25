@@ -449,7 +449,6 @@ def render_textlist(viewname: str, elem: Element) -> List[str]:
 
 
 def render_view_items(viewname: str, platform_name: str, elems: List[Element]) -> List[str]:
-    elems = sorted(elems, key=lambda elem: elem.name)
     elems = sorted(elems, key=es_zorder)
     # print(f"  - {viewname}: {len(elems)} elem")
     lines = [
