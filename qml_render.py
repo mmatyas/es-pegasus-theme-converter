@@ -58,9 +58,8 @@ def render_prop_id(elem: Element, props: Dict[str, str]):
     clean_str = re.sub('[^a-zA-Z0-9_]+', '_', elem.name)
     props['id'] = clean_str[0].lower() + clean_str[1:]
 
-    # FIXME: handle non-extra items marked as extra on the XML side
-    # if elem.is_extra:
-    #     props['id'] = 'x_' + props['id']  # to avoid illegal JS names
+    if elem.is_extra:
+        props['id'] = 'x_' + props['id']  # to avoid illegal JS names
 
 
 def render_prop_pos(elem: Element, props: Dict[str, str]):
