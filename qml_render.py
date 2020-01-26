@@ -4,6 +4,36 @@ from typing import Dict, List
 from es_items import Element
 
 
+class QmlItem:
+    def __init__(self, typename):
+        self.typename = typename
+        self.props: Dict[str, str] = {}
+        self.extra_lines = []
+        self.childs: List[QmlItem] = []
+        self.named_childs: Dict[str, QmlItem] = {}
+
+    def render(self, indent=0):
+        lines = [f"{'  ' * indent}{self.typename} {{"]
+
+        subindent = '  ' * (indent + 1)
+
+        prop_lines = [f"{subindent}{key}: {val}" for key, val in self.props.items()]
+        prop_lines.sort()
+        lines.extend(prop_lines)
+        lines.extend(self.extra_lines)
+
+        for name, qitem in self.named_childs.items():
+            sublines = qitem.render(indent + 1)
+            sublines[0] = f"{subindent}{name}: {qitem.typename} {{"
+            lines.extend(sublines)
+
+        for qitem in self.childs:
+            lines.extend(qitem.render(indent + 1))
+
+        lines.append(f"{'  ' * indent}}}")
+        return lines
+
+
 def print_debug(elem):
     print(f"    - {elem.type} {elem.name} extra:{elem.is_extra}")
     for prop in elem.params:
@@ -45,12 +75,6 @@ def es_zorder(elem: Element) -> int:
         return int(elem.params['zIndex'])
 
     return DEFAULT_ZORDERS.get(elem.name, 10)
-
-
-def render_props(props: Dict[str, str], indent=1) -> List[str]:
-    lines = [f"{'  ' * indent}{key}: {val}" for key, val in props.items()]
-    lines.sort()
-    return lines
 
 
 def render_prop_id(elem: Element, props: Dict[str, str]):
@@ -120,41 +144,32 @@ def render_prop_opacity(elem: Element, props: Dict[str, str]):
             props['opacity'] = str(alpha / 255.0)
 
 
-def render_prop_color_overlay(elem, elem_id: str) -> List[str]:
+def create_color_overlay(elem, elem_id: str) -> List[QmlItem]:
     colorfill_id = 'color_' + elem_id
-    props = {
+
+    colorfill = QmlItem('Rectangle')
+    colorfill.props = {
         'id': colorfill_id,
         'anchors.fill': elem_id,
         'color': f"'#{elem.params['color'].color}'",
         'visible': 'false',
     }
-    lines = [
-        "Rectangle {",
-        *render_props(props),
-        "}",
-    ]
 
-    props = {
+    blend = QmlItem('Blend')
+    blend.props = {
         'anchors.fill': elem_id,
         'source': elem_id,
         'foregroundSource': colorfill_id,
         'mode': "'multiply'",
     }
-
     opacity = elem.params['color'].opacity
     if opacity < 1.0:
-        props['opacity'] = opacity
+        blend.props['opacity'] = opacity
 
-    lines.extend([
-        "Blend {",
-        *render_props(props),
-        "}",
-    ])
-
-    return lines
+    return [colorfill, blend]
 
 
-def create_rgba_color(color) -> str:
+def render_rgba_color(color) -> str:
     return f"'#{color.hex[6:]}{color.hex[0:6]}'"
 
 
@@ -191,16 +206,26 @@ def render_prop_textinfo(elem: Element, props: Dict[str, str]):
         props['lineHeight'] = elem.params['lineSpacing']
 
 
-def render_image(viewname: str, elem: Element) -> List[str]:
-    props = get_defaults(viewname, elem.type, elem.name)
-    sibling_lines = []
+def create_image(viewname: str, elem: Element) -> List[QmlItem]:
+    qitem = QmlItem('Image')
+    qitem.props = get_defaults(viewname, elem.type, elem.name)
 
-    render_prop_id(elem, props)
-    render_prop_pos(elem, props)
-    render_prop_rotation(elem, props)
-    render_prop_opacity(elem, props)
-    render_prop_zindex(elem, props)
-    render_prop_visible(elem, props)
+    render_prop_id(elem, qitem.props)
+    render_prop_pos(elem, qitem.props)
+    render_prop_rotation(elem, qitem.props)
+    render_prop_opacity(elem, qitem.props)
+    render_prop_zindex(elem, qitem.props)
+    render_prop_visible(elem, qitem.props)
+
+    if 'path' in elem.params:
+        qitem.props['source'] = prepare_text('../' + elem.params['path'])
+        if 'default' in elem.params:
+            default = prepare_text('../' + elem.params['default'])
+            qitem.props['source'] = f"{qitem.props['source']} || {default}"
+
+    if 'source' not in qitem.props:
+        # return []
+        pass
 
     if 'size' in elem.params:
         pair = elem.params['size']
@@ -208,90 +233,81 @@ def render_image(viewname: str, elem: Element) -> List[str]:
         has_height = pair.b != 0.0
 
         if has_width and has_height:
-            props['fillMode'] = 'Image.Stretch'
-            props['width'] = f"{pair.a} * root.width"
-            props['height'] = f"{pair.b} * root.height"
+            qitem.props['fillMode'] = 'Image.Stretch'
+            qitem.props['width'] = f"{pair.a} * root.width"
+            qitem.props['height'] = f"{pair.b} * root.height"
 
         if has_width and not has_height:
-            props['width'] = f"{pair.a} * root.width"
-            props['height'] = "width * (implicitHeight || 1) / (implicitWidth || 1)"
+            qitem.props['width'] = f"{pair.a} * root.width"
+            qitem.props['height'] = "width * (implicitHeight || 1) / (implicitWidth || 1)"
 
         if not has_width and has_height:
-            props['width'] = "height * (implicitWidth || 1) / (implicitHeight || 1)"
-            props['height'] = f"{pair.b} * root.height"
+            qitem.props['width'] = "height * (implicitWidth || 1) / (implicitHeight || 1)"
+            qitem.props['height'] = f"{pair.b} * root.height"
 
     elif 'maxSize' in elem.params:
         pair = elem.params['maxSize']
-        props['width'] = f"{pair.a} * root.width"
-        props['height'] = f"{pair.b} * root.height"
-        props['fillMode'] = 'Image.PreserveAspectFit'
+        qitem.props['width'] = f"{pair.a} * root.width"
+        qitem.props['height'] = f"{pair.b} * root.height"
+        qitem.props['fillMode'] = 'Image.PreserveAspectFit'
 
     if 'tile' in elem.params and elem.params['tile']:
-        props['fillMode'] = 'Image.Tile'
+        qitem.props['fillMode'] = 'Image.Tile'
 
-    if 'path' in elem.params:
-        props['source'] = prepare_text('../' + elem.params['path'])
-        if 'default' in elem.params:
-            default = prepare_text('../' + elem.params['default'])
-            props['source'] = f"{props['source']} || {default}"
-
-    if 'source' not in props:
-        # return []
-        pass
+    siblings = []
 
     if 'color' in elem.params:
-        props['visible'] = 'false'
-        props.pop('opacity', None)
-        sibling_lines = render_prop_color_overlay(elem, props['id'])
+        qitem.props['visible'] = 'false'
+        qitem.props.pop('opacity', None)
+        siblings.extend(create_color_overlay(elem, qitem.props['id']))
 
-    lines = [
-        "Image {",
-        *render_props(props),
-        "}",
-        *sibling_lines,
-    ]
-    if 'opacity' not in props and 'visible' not in props:
-        lines.insert(len(lines) - 1, '  Behavior on opacity { NumberAnimation { duration: 120 } }')
+    if 'opacity' not in qitem.props and 'visible' not in qitem.props:
+        qitem.extra_lines.append('Behavior on opacity { NumberAnimation { duration: 120 } }')
 
-    return lines
+    return [qitem] + siblings
 
 
-def render_text(viewname: str, elem: Element) -> List[str]:
-    props = get_defaults(viewname, elem.type, elem.name)
-    childs = []
+def create_text(viewname: str, elem: Element) -> List[QmlItem]:
+    qitem = QmlItem('Text')
+    qitem.props = get_defaults(viewname, elem.type, elem.name)
 
-    render_prop_id(elem, props)
-    render_prop_pos(elem, props)
-    render_prop_rotation(elem, props)
-    render_prop_zindex(elem, props)
-    render_prop_visible(elem, props)
-    render_prop_opacity(elem, props)
-    render_prop_fontinfo(elem, props)
-    render_prop_textinfo(elem, props)
+    render_prop_id(elem, qitem.props)
+    render_prop_pos(elem, qitem.props)
+    render_prop_rotation(elem, qitem.props)
+    render_prop_zindex(elem, qitem.props)
+    render_prop_visible(elem, qitem.props)
+    render_prop_opacity(elem, qitem.props)
+    render_prop_fontinfo(elem, qitem.props)
+    render_prop_textinfo(elem, qitem.props)
 
     if 'size' in elem.params:
         pair = elem.params['size']
         if pair.a != 0.0:
-            props['width'] = f"{pair.a} * root.width"
-            props['wrapMode'] = "Text.WordWrap"
+            qitem.props['width'] = f"{pair.a} * root.width"
+            qitem.props['wrapMode'] = "Text.WordWrap"
         if pair.b != 0.0:
-            props['height'] = f"{pair.b} * root.height"
-            props['elide'] = "Text.ElideRight"
+            qitem.props['height'] = f"{pair.b} * root.height"
+            qitem.props['elide'] = "Text.ElideRight"
 
     if 'color' in elem.params:
-        props['color'] = create_rgba_color(elem.params['color'])
+        qitem.props['color'] = render_rgba_color(elem.params['color'])
 
     if 'backgroundColor' in elem.params:
-        color_str = create_rgba_color(elem.params['backgroundColor'])
-        childs.append(f"Rectangle {{ anchors.fill: parent; color: '{color_str}'; z: -1 }}")
+        bg_item = QmlItem('Rectangle')
+        bg_item.props = {
+            'anchors.fill': 'parent',
+            'color': render_rgba_color(elem.params['backgroundColor']),
+            'z': '-1',
+        }
+        qitem.childs.append(bg_item)
 
     if elem.type == 'text':
         if 'text' in elem.params:
-            props['text'] = prepare_text(elem.params['text'])
+            qitem.props['text'] = prepare_text(elem.params['text'])
 
     if elem.type == 'datetime':
         if elem.params.get('displayRelative', False):
-            props['text'] = 'Helpers.relative_date(value)'
+            qitem.props['text'] = 'Helpers.relative_date(value)'
 
         if 'format' in elem.params:
             format_str = elem.params['format'] \
@@ -302,67 +318,59 @@ def render_text(viewname: str, elem: Element) -> List[str]:
                 .replace('%M', 'mm') \
                 .replace('%S', 'ss') \
                 .replace("'", "\\'")
-            props['readonly property string dateFormat'] = prepare_text(format_str)
+            qitem.props['readonly property string dateFormat'] = prepare_text(format_str)
 
-    if 'text' not in props:
+    if 'text' not in qitem.props:
         # return []
         pass
 
-    return [
-        "Text {",
-        *render_props(props),
-        *[f"  {line}" for line in childs],
-        "}"
-    ]
+    return [qitem]
 
 
-def render_rating(viewname: str, elem: Element) -> List[str]:
-    props = get_defaults(viewname, elem.type, elem.name)
-    sibling_lines = []
+def create_rating(viewname: str, elem: Element) -> List[QmlItem]:
+    qitem = QmlItem('RatingBar')
+    qitem.props = get_defaults(viewname, elem.type, elem.name)
 
-    render_prop_id(elem, props)
-    render_prop_pos(elem, props)
-    render_prop_rotation(elem, props)
-    render_prop_zindex(elem, props)
-    render_prop_visible(elem, props)
-    render_prop_opacity(elem, props)
+    render_prop_id(elem, qitem.props)
+    render_prop_pos(elem, qitem.props)
+    render_prop_rotation(elem, qitem.props)
+    render_prop_zindex(elem, qitem.props)
+    render_prop_visible(elem, qitem.props)
+    render_prop_opacity(elem, qitem.props)
 
     if 'filledPath' in elem.params:
-        props['filledPath'] = f"'../{elem.params['filledPath']}'"
+        qitem.props['filledPath'] = f"'../{elem.params['filledPath']}'"
     if 'unfilledPath' in elem.params:
-        props['unfilledPath'] = f"'../{elem.params['unfilledPath']}'"
+        qitem.props['unfilledPath'] = f"'../{elem.params['unfilledPath']}'"
 
     if 'size' in elem.params:
         pair = elem.params['size']
         if pair.b == 0.0:
-            props['width'] = f"{pair.a} * root.width * 5"
-            props['height'] = 'width / 5'
+            qitem.props['width'] = f"{pair.a} * root.width * 5"
+            qitem.props['height'] = 'width / 5'
         elif pair.a == 0.0:
-            props['width'] = 'height * 5'
-            props['height'] = f"{pair.b} * root.height"
+            qitem.props['width'] = 'height * 5'
+            qitem.props['height'] = f"{pair.b} * root.height"
 #        if pair.a != 0.0:
-#            props['width'] = f"{pair.a} * root.width * 5"
-#            props['height'] = 'width / 5'
+#            qitem.props['width'] = f"{pair.a} * root.width * 5"
+#            qitem.props['height'] = 'width / 5'
 #        elif pair.b != 0.0:
-#            props['width'] = 'height * 5'
-#            props['height'] = f"{pair.b} * root.height"
+#            qitem.props['width'] = 'height * 5'
+#            qitem.props['height'] = f"{pair.b} * root.height"
+
+    siblings = []
 
     if 'color' in elem.params:
-        props['visible'] = 'false'
-        props.pop('opacity', None)
-        sibling_lines = render_prop_color_overlay(elem, props['id'])
+        qitem.props['visible'] = 'false'
+        qitem.props.pop('opacity', None)
+        siblings.extend(create_color_overlay(elem, qitem.props['id']))
 
-    lines = [
-        "RatingBar {",
-        *render_props(props),
-        "}",
-        *sibling_lines,
-    ]
-
-    return lines
+    return [qitem] + siblings
 
 
-def render_helpsystem(viewname: str, elem: Element) -> List[str]:
+def create_helpsystem(viewname: str, elem: Element) -> List[QmlItem]:
+    return []  # Not supported yet
+
     props = get_defaults(viewname, elem.type, elem.name)
 
     render_prop_id(elem, props)
@@ -372,36 +380,38 @@ def render_helpsystem(viewname: str, elem: Element) -> List[str]:
     for kind in ['textColor', 'iconColor']:
         props[kind] = "'#777777'"
         if kind in elem.params:
-            props[kind] = create_rgba_color(elem.params[kind])
+            props[kind] = render_rgba_color(elem.params[kind])
 
     return []
     return [
         "Utils.HelpSystem {",
-        *render_props(props),
         "}",
     ]
 
 
-def render_textlist(viewname: str, elem: Element) -> List[str]:
-    list_props = get_defaults(viewname, elem.type, elem.name)
-    delegate_props = get_defaults(viewname, elem.type + '__delegate', elem.name + '__delegate')
+def create_textlist(viewname: str, elem: Element) -> List[QmlItem]:
+    qlist = QmlItem('ListView')
+    qlist.props = get_defaults(viewname, elem.type, elem.name)
+    qdelegate = QmlItem('Text')
+    qdelegate.props = get_defaults(viewname, elem.type + '__delegate', elem.name + '__delegate')
+    qhighlight = QmlItem('Rectangle')
 
-    render_prop_id(elem, list_props)
-    render_prop_pos(elem, list_props)
-    render_prop_fontinfo(elem, delegate_props)
-    render_prop_textinfo(elem, delegate_props)
-    render_prop_zindex(elem, list_props)
-    render_prop_visible(elem, list_props)
+    render_prop_id(elem, qlist.props)
+    render_prop_pos(elem, qlist.props)
+    render_prop_fontinfo(elem, qdelegate.props)
+    render_prop_textinfo(elem, qdelegate.props)
+    render_prop_zindex(elem, qlist.props)
+    render_prop_visible(elem, qlist.props)
 
     if 'size' in elem.params:
         pair = elem.params['size']
-        list_props['width'] = f"{pair.a} * root.width"
-        list_props['height'] = f"{pair.b} * root.height"
-        list_props['clip'] = "true"
+        qlist.props['width'] = f"{pair.a} * root.width"
+        qlist.props['height'] = f"{pair.b} * root.height"
+        qlist.props['clip'] = "true"
 
     if 'selectorImagePath' in elem.params:
-        hl_type = 'Image'
-        hl_props = {
+        qhighlight.typename = 'Image'
+        qhighlight.props = {
             'source': "'../" + elem.params['selectorImagePath'] + "'",
             'asynchronous': 'true',
             # 'fillMode': 'Image.Pad',
@@ -409,83 +419,80 @@ def render_textlist(viewname: str, elem: Element) -> List[str]:
         }
         if 'selectorImageTile' in elem.params:
             if elem.params['selectorImageTile']:
-                hl_props['fillMode'] = "Image.PreserveAspectFit"
+                qhighlight.props['fillMode'] = "Image.PreserveAspectFit"
     else:
-        hl_type = 'Rectangle'
-        hl_props = {
+        qhighlight.typename = 'Rectangle'
+        qhighlight.props = {
             'color': "'#000'"
         }
         if 'selectorColor' in elem.params:
-            hl_props['color'] = create_rgba_color(elem.params['selectorColor'])
+            qhighlight.props['color'] = render_rgba_color(elem.params['selectorColor'])
 
     if 'fontSize' in elem.params:
         size = elem.params['fontSize']
-        list_props['readonly property int highlightHeight'] = f"{size} * 1.5 * root.height"
-
-    list_props['highlight'] = f"{hl_type} {{ {'; '.join(render_props(hl_props, indent=0))}; }}"
+        qlist.props['readonly property int highlightHeight'] = f"{size} * 1.5 * root.height"
 
     if 'primaryColor' in elem.params:
-        delegate_props['readonly property color unselectedColor'] = create_rgba_color(elem.params['primaryColor'])
-        delegate_props['color'] = 'unselectedColor'
+        qdelegate.props['readonly property color unselectedColor'] = render_rgba_color(elem.params['primaryColor'])
+        qdelegate.props['color'] = 'unselectedColor'
     if 'selectedColor' in elem.params:
-        delegate_props['readonly property color selectedColor'] = create_rgba_color(elem.params['selectedColor'])
+        qdelegate.props['readonly property color selectedColor'] = render_rgba_color(elem.params['selectedColor'])
     if 'primaryColor' in elem.params and 'selectedColor' in elem.params:
-        delegate_props['color'] = 'ListView.isCurrentItem ? selectedColor : unselectedColor'
+        qdelegate.props['color'] = 'ListView.isCurrentItem ? selectedColor : unselectedColor'
 
     if 'horizontalMargin' in elem.params:
         pad = elem.params['horizontalMargin']
-        delegate_props['leftPadding'] = f'{pad} * root.width'
-        delegate_props['rightPadding'] = 'leftPadding'
+        qdelegate.props['leftPadding'] = f'{pad} * root.width'
+        qdelegate.props['rightPadding'] = 'leftPadding'
 
-    return [
-        "ListView {",
-        *render_props(list_props),
-        "  delegate: Text {",
-        *render_props(delegate_props, indent=2),
-        "  }",
-        "}",
-    ]
+    qlist.named_childs = {
+        'delegate': qdelegate,
+        'highlight': qhighlight,
+    }
+    return [qlist]
 
 
 def render_view_items(viewname: str, elems: List[Element]) -> List[str]:
     elems = sorted(elems, key=es_zorder)
     # print(f"  - {viewname}: {len(elems)} elem")
-    lines = [
-        "id: root",
-        "enabled: focus",
-        "focus: parent.focus",
-        "clip: true",
-    ]
+
+    qroot = QmlItem('FocusScope')
+    qroot.props = {
+        'id': 'root',
+        'enabled': 'focus',
+        'focus': 'parent.focus',
+        'clip': 'true',
+    }
 
     if viewname != 'system':
         if viewname == 'grid':
             holder = 'gamegrid'
         else:
             holder = 'gamelist'
-        lines.append(f"readonly property alias currentGame: {holder}.currentGame")
+        qroot.props['readonly property alias currentGame'] = f"{holder}.currentGame"
 
     for elem in elems:
         # print(platform_name, viewname, elem.type, elem.name)
 
         if elem.type == 'image':
             if not (viewname == 'system' and elem.name == 'logo'):
-                lines.extend(render_image(viewname, elem))
+                qroot.childs.extend(create_image(viewname, elem))
             continue
         if elem.type == 'text':
             if not (viewname == 'system' and elem.name in ['systemInfo', 'logoText']):
-                lines.extend(render_text(viewname, elem))
+                qroot.childs.extend(create_text(viewname, elem))
             continue
         if elem.type == 'datetime':
-            lines.extend(render_text(viewname, elem))
+            qroot.childs.extend(create_text(viewname, elem))
             continue
         if elem.type == 'rating':
-            lines.extend(render_rating(viewname, elem))
+            qroot.childs.extend(create_rating(viewname, elem))
             continue
         if elem.type == 'helpsystem':
-            lines.extend(render_helpsystem(viewname, elem))
+            qroot.childs.extend(create_helpsystem(viewname, elem))
             continue
         if elem.type == 'textlist':
-            lines.extend(render_textlist(viewname, elem))
+            qroot.childs.extend(create_textlist(viewname, elem))
             continue
         print_debug(elem)
 
@@ -494,7 +501,4 @@ def render_view_items(viewname: str, elems: List[Element]) -> List[str]:
         "import QtGraphicalEffects 1.0",
         "import '../__components'",
         "import '../__components/helpers.js' as Helpers",
-        "FocusScope {",
-        *[f"  {line}" for line in lines],
-        "}",
-    ]
+    ] + qroot.render()

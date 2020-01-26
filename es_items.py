@@ -170,6 +170,9 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     ('detailed', 'datetime', 'md_lastplayed'): {
         'displayRelative': 'true',
     },
+    ('*', 'carousel', '*'): {
+
+    },
 }
 DEFAULT_PROPS[('*', 'datetime', '*')] = {
     **DEFAULT_PROPS[('*', 'text', '*')],
