@@ -6,7 +6,7 @@ from typing import Dict, List, Set
 from errors import print_info, print_error, warn
 from es_items import Platform, Element, create_default_views
 from property_types import parse_param, Property
-from static import KNOWN_ELEMENTS, RESERVED_ITEMS, MAX_FORMAT_VERSION
+from static import KNOWN_ELEMENTS, RESERVED_ITEMS, RESTRICTED_TYPES, MAX_FORMAT_VERSION
 
 
 def check_format_version(xml_path: str, root: ET.Element):
@@ -72,6 +72,7 @@ def parse_view_item_property(curr_dir: str, variables: Dict[str, str], itemtype:
 
 def read_view(xml_path, variables, viewname, viewnode, view) -> Set[str]:
     unsupported_elems = set()
+    reserved_view_items = RESERVED_ITEMS.get(viewname, {})
 
     curr_dir = os.path.dirname(xml_path)
 
@@ -107,7 +108,8 @@ def read_view(xml_path, variables, viewname, viewnode, view) -> Set[str]:
                 continue
 
         for itemname in affected_items:
-            expected_type = RESERVED_ITEMS.get(viewname, {}).get(itemname)
+            expected_type = reserved_view_items.get(itemname)
+            really_extra = expected_type is None
 
             if expected_type and expected_type != element.tag:
                 warn(f"{xml_path}: In `{viewname}` views `{itemname}` is a known element with type "
@@ -115,12 +117,17 @@ def read_view(xml_path, variables, viewname, viewnode, view) -> Set[str]:
                      "Ignoring the properties.")
                 continue
 
-            if is_extra and expected_type:
+            if is_extra and not really_extra:
                 warn(f"{xml_path}: In `{viewname}` views `{itemname}` is a known non-extra element, "
                      "but it is marked as an extra here. Ignoring the extra setting.")
-            if not is_extra and not expected_type:
+            if not is_extra and really_extra:
                 warn(f"{xml_path}: In `{viewname}` views `{itemname}` is not a known element "
                      "and should be marked as extra, but it isn't. Marking it as one.")
+
+            if really_extra and element.tag in RESTRICTED_TYPES:
+                warn(f"{xml_path}: `{element.tag}` items cannot be created as an extra element, "
+                     "because they don't have anything to display on their own")
+                continue
 
             item = view.setdefault(itemname, Element(itemname, element.tag))
             assert(itemname == item.name)

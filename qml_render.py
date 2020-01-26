@@ -1,6 +1,5 @@
 import re
-from static import DEFAULT_PROPS, DEFAULT_ZORDERS, RESERVED_ITEMS, RESTRICTED_TYPES
-from errors import warn
+from static import DEFAULT_PROPS, DEFAULT_ZORDERS
 from typing import Dict, List
 from es_items import Element
 
@@ -448,7 +447,7 @@ def render_textlist(viewname: str, elem: Element) -> List[str]:
     ]
 
 
-def render_view_items(viewname: str, platform_name: str, elems: List[Element]) -> List[str]:
+def render_view_items(viewname: str, elems: List[Element]) -> List[str]:
     elems = sorted(elems, key=es_zorder)
     # print(f"  - {viewname}: {len(elems)} elem")
     lines = [
@@ -465,33 +464,7 @@ def render_view_items(viewname: str, platform_name: str, elems: List[Element]) -
             holder = 'gamelist'
         lines.append(f"readonly property alias currentGame: {holder}.currentGame")
 
-    reserved_items: Dict[str, str] = RESERVED_ITEMS.get(viewname, {})
-
     for elem in elems:
-        if elem.is_extra:
-            if elem.type in RESTRICTED_TYPES:
-                warn(f"{platform_name}, {viewname} view: `{elem.name}` cannot be created as an extra element, "
-                     "because it doesn't have anything to display on its own")
-                continue
-            if elem.name in reserved_items:
-                warn(f"{platform_name}, {viewname} view: `{elem.name}` is marked as extra, "
-                     f"but there's a non-extra item with the same name. This isn't well supported "
-                     "at the moment, expect issues.")
-                # elem.is_extra = False
-                # continue
-
-        if not elem.is_extra:
-            if elem.name not in reserved_items:
-                warn(f"{platform_name}, {viewname} view: `{elem.name}` is not marked as extra, "
-                     f"but no items with such name exist in this view. Entry ignored.")
-                continue
-
-            expected_type = reserved_items[elem.name]
-            if elem.type != expected_type:
-                warn(f"{platform_name}, {viewname} view: `{elem.type}` properties are set for `{elem.name}`, "
-                     f"but the type of that is `{expected_type}`. Properties ignored.")
-                continue
-
         # print(platform_name, viewname, elem.type, elem.name)
 
         if elem.type == 'image':

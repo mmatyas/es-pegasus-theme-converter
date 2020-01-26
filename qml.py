@@ -10,7 +10,7 @@ def create_qml_defaults(default_views, out_files):
         if viewname not in SUPPORTED_VIEWS:
             continue
 
-        lines = render_view_items(viewname, None, default_views[viewname].values())
+        lines = render_view_items(viewname, default_views[viewname].values())
 
         import_lines = 5
         lines.insert(import_lines, "  Rectangle { anchors.fill: parent; color: '#fff' }")
@@ -24,7 +24,7 @@ def create_qml_platform_views(platform, out_files):
         if viewname not in SUPPORTED_VIEWS:
             continue
 
-        lines = render_view_items(viewname, platform.name, platform.views[viewname].values())
+        lines = render_view_items(viewname, platform.views[viewname].values())
 
         filepath = os.path.join(platform.name, viewname + '.qml')
         out_files[filepath] = '\n'.join(lines)
