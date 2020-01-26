@@ -260,6 +260,8 @@ def create_image(viewname: str, elem: Element) -> List[QmlItem]:
         qitem.props['visible'] = 'false'
         qitem.props.pop('opacity', None)
         siblings.extend(create_color_overlay(elem, qitem.props['id']))
+        if 'z' in qitem.props:
+            siblings[-1].props['z'] = qitem.props.pop('z')
 
     if 'opacity' not in qitem.props and 'visible' not in qitem.props:
         qitem.extra_lines.append('Behavior on opacity { NumberAnimation { duration: 120 } }')
@@ -364,6 +366,8 @@ def create_rating(viewname: str, elem: Element) -> List[QmlItem]:
         qitem.props['visible'] = 'false'
         qitem.props.pop('opacity', None)
         siblings.extend(create_color_overlay(elem, qitem.props['id']))
+        if 'z' in qitem.props:
+            siblings[-1].props['z'] = qitem.props.pop('z')
 
     return [qitem] + siblings
 
