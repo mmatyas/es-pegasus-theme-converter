@@ -169,22 +169,22 @@ KNOWN_ELEMENTS: Dict[str, Dict[str, PropType]] = {
     #     'showSnapshotNoVideo': PropType.BOOLEAN,
     #     'showSnapshotDelay': PropType.BOOLEAN,
     # },
-    # 'carousel': {
-    #     'type': PropType.STRING,
-    #     'size': PropType.NORMALIZED_PAIR,
-    #     'pos': PropType.NORMALIZED_PAIR,
-    #     'origin': PropType.NORMALIZED_PAIR,
-    #     'color': PropType.COLOR,
-    #     'colorEnd': PropType.COLOR,
-    #     'gradientType': PropType.STRING,
-    #     'logoScale': PropType.FLOAT,
-    #     'logoRotation': PropType.FLOAT,
-    #     'logoRotationOrigin': PropType.NORMALIZED_PAIR,
-    #     'logoSize': PropType.NORMALIZED_PAIR,
-    #     'logoAlignment': PropType.STRING,
-    #     'maxLogoCount': PropType.FLOAT,
-    #     'zIndex': PropType.FLOAT,
-    # },
+    'carousel': {
+        'type': PropType.STRING,
+        'size': PropType.NORMALIZED_PAIR,
+        'pos': PropType.NORMALIZED_PAIR,
+        'origin': PropType.NORMALIZED_PAIR,
+        'color': PropType.COLOR,
+        # undocumented: 'colorEnd': PropType.COLOR,
+        # undocumented: 'gradientType': PropType.STRING,
+        'logoScale': PropType.FLOAT,
+        'logoRotation': PropType.FLOAT,
+        'logoRotationOrigin': PropType.NORMALIZED_PAIR,
+        'logoSize': PropType.NORMALIZED_PAIR,
+        'logoAlignment': PropType.STRING,
+        'maxLogoCount': PropType.FLOAT,
+        'zIndex': PropType.FLOAT,
+    },
 }
 
 SUPPORTED_VIEWS = [
@@ -198,6 +198,7 @@ RESERVED_ITEMS: Dict[str, Dict[str, str]] = {
         'background': 'image',
         'logo': 'image',
         'logoText': 'text',
+        'systemcarousel': 'carousel',
     },
     'basic': {
         'background': 'image',
@@ -352,6 +353,53 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     ('detailed', 'datetime', 'md_releasedate'): {'readonly property date value': "currentGame.release"},
     ('detailed', 'datetime', 'md_lastplayed'): {'readonly property date value': "currentGame.lastPlayed"},
     ('detailed', 'rating', 'md_rating'): {'percentage': 'currentGame.rating'},
+    ('system', 'carousel__axis', 'systemcarousel__axis'): {
+        'id': 'logoAxis',
+        'focus': 'true',
+        'anchors.fill': 'parent',
+        'Keys.onPressed':
+            'if (!event.isAutoRepeat && api.keys.isAccept(event)) ' +
+            '{ event.accepted = true; return root.enter(); }',
+        'snapMode': 'PathView.SnapOneItem',
+        'preferredHighlightBegin': '0.5',
+        'preferredHighlightEnd': '0.5',
+        'pathItemCount':
+            '{ let count = Math.ceil(width / itemMainLength); '
+            'return (count + 2 <= model.count) ? count + 2 : Math.min(count, model.count); }',
+        'readonly property int pathLength': 'pathItemCount * itemMainLength',
+    },
+    ('system', 'carousel__axis_delegate', 'systemcarousel__axis_delegate'): {
+        'readonly property bool selected': 'PathView.isCurrentItem',
+        'opacity': 'selected ? 1.0 : 0.5',
+    },
+    ('system', 'carousel__axis_delegate_image', 'systemcarousel__axis_delegate_image'): {
+        'id': 'logoImage',
+        'anchors.fill': 'parent',
+        'asynchronous': 'true',
+        'smooth': 'false',
+        'readonly property string sourceRelPath':
+            "{ "
+            "let path = g_PLATFORM_LOGOS.get(modelData.shortName); "
+            "if (path) return path;"
+            "path = g_PLATFORM_LOGOS.get('__generic');"
+            "if (path) return path"
+            ".replace('${system.name}', modelData.shortName)"
+            ".replace('${system.theme}', modelData.shortName);"
+            "return null; }",
+        'source': "(sourceRelPath && `../${sourceRelPath}`) || ''",
+        'fillMode': 'Image.PreserveAspectFit',
+        'visible': 'status == Image.Ready',
+        'opacity': 'visible ? 1.0 : 0.0',
+    },
+    ('system', 'carousel__axis_delegate_text', 'systemcarousel__axis_delegate_text'): {
+        'textFormat': "Text.PlainText",
+        'id': "logoText",
+        'anchors.centerIn': "parent",
+        'color': "'#000'",
+        'text': "shortName || longName",
+        'font.pixelSize': "0.085 * Window.height",
+        'visible': "logoImage.status != Image.Loading && logoImage.status != Image.Ready",
+    },
 }
 DEFAULT_PROPS[('*', 'datetime', '*')] = {
     **DEFAULT_PROPS.get(('*', 'text', '*'), {}),
@@ -465,68 +513,12 @@ FocusScope {
       source: (sourceDir && `../${sourceDir}/system.qml`) || 'MissingSystemView.qml'
     }
   }
-  Rectangle {
-    id: systemCarousel
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.verticalCenter: parent.verticalCenter
-    height: 0.2325 * root.height
-    color: '#d8ffffff'
-    Carousel {
-      id: logoAxis
-      focus: true
-      Keys.onPressed: {
-        if (!event.isAutoRepeat && api.keys.isAccept(event)) {
-          event.accepted = true;
-          return root.enter();
-        }
-      }
-      anchors.fill: parent
-      itemWidth: width / 3
-      delegate: Item {
-        readonly property bool selected: PathView.isCurrentItem
-        width: 0.25 * root.width
-        height: 0.155 * root.height
-        scale: selected ? 1.2 : 1.0
-        opacity: selected ? 1.0 : 0.5
-        Behavior on scale { NumberAnimation { duration: 200 } }
-        Image {
-          id: logoImage
-          anchors.fill: parent
-          asynchronous: true
-          smooth: false
-          readonly property string sourceRelPath: {
-            let path = g_PLATFORM_LOGOS.get(modelData.shortName);
-            if (path) return path;
-            path = g_PLATFORM_LOGOS.get('__generic');
-            if (path) return path
-                .replace('${system.name}', modelData.shortName)
-                .replace('${system.theme}', modelData.shortName);
-            return null;
-          }
-          source: (sourceRelPath && `../${sourceRelPath}`) || ''
-          fillMode: Image.PreserveAspectFit
-          visible: status == Image.Ready
-          opacity: visible ? 1.0 : 0.0
-          Behavior on opacity { NumberAnimation { duration: 120 } }
-        }
-        Text {
-          textFormat: Text.PlainText
-          id: logoText
-          anchors.centerIn: parent
-          color: '#000'
-          text: shortName || longName
-          font.pixelSize: 0.085 * Window.height
-          visible: logoImage.status != Image.Loading && logoImage.status != Image.Ready
-        }
-      }
-    }
-  }
+$$SYSTEMCAROUSEL$$
   Text {
     textFormat: Text.PlainText
     anchors.left: parent.left
     anchors.right: parent.right
-    anchors.top: systemCarousel.bottom
+    anchors.top: systemcarousel.bottom
     height: font.pixelSize * 1.75
     color: '#000'
     font.pixelSize: root.height * 0.035

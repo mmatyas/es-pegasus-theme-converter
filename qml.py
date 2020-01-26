@@ -1,7 +1,7 @@
 import os
 from typing import Dict, List
 
-from qml_render import render_view_items, font_path_to_name
+from qml_render import render_view_items, font_path_to_name, create_systemcarousel
 from static import SUPPORTED_VIEWS, STATIC_FILES
 
 
@@ -65,7 +65,7 @@ def collect_platform_views(ui_platforms) -> Dict[str, List[str]]:
     return views
 
 
-def fill_templates(ui_platforms, out_files):
+def fill_templates(ui_platforms, default_views, out_files):
     fonts = collect_fonts(ui_platforms)
     platform_logos = collect_platform_logos(ui_platforms)
     platform_views = collect_platform_views(ui_platforms)
@@ -96,6 +96,15 @@ def fill_templates(ui_platforms, out_files):
         .replace('$$PLATFORM_LOGOS$$', platform_logos_str) \
         .replace('$$PLATFORMS_WITH_SYSTEMS$$', platforms_w_system_str)
 
+    carousel_elem = default_views['system']['systemcarousel']
+    if ui_platforms:
+        first_platform = sorted(ui_platforms, key=lambda p: p.name)[0]
+        carousel_elem = first_platform.views['system']['systemcarousel']
+
+    carousel_lines = create_systemcarousel(carousel_elem)[0].render(indent=1)
+    out_files['__components/SystemView.qml'] = out_files['__components/SystemView.qml'] \
+        .replace('$$SYSTEMCAROUSEL$$', '\n'.join(carousel_lines))
+
 
 def create_qml(theme_name, platforms, default_views) -> Dict[str, str]:
     out_files: Dict[str, str] = {}
@@ -107,7 +116,7 @@ def create_qml(theme_name, platforms, default_views) -> Dict[str, str]:
     for path, contents in STATIC_FILES.items():
         out_files[path] = contents.strip()
 
-    fill_templates(platforms, out_files)
+    fill_templates(platforms, default_views, out_files)
 
     lines = [
         "name: " + theme_name,
