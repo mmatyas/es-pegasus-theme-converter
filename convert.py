@@ -8,7 +8,8 @@ from typing import Dict
 
 from errors import print_info
 from qml import create_qml
-from es_reader import find_platforms, create_default_views
+from es_reader import find_platforms
+from es_items import create_default_views
 
 
 def print_systems(ui_platforms):
