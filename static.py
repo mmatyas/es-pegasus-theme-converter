@@ -353,53 +353,6 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     ('detailed', 'datetime', 'md_releasedate'): {'readonly property date value': "currentGame.release"},
     ('detailed', 'datetime', 'md_lastplayed'): {'readonly property date value': "currentGame.lastPlayed"},
     ('detailed', 'rating', 'md_rating'): {'percentage': 'currentGame.rating'},
-    ('system', 'carousel__axis', 'systemcarousel__axis'): {
-        'id': 'logoAxis',
-        'focus': 'true',
-        'anchors.fill': 'parent',
-        'Keys.onPressed':
-            'if (!event.isAutoRepeat && api.keys.isAccept(event)) ' +
-            '{ event.accepted = true; return root.enter(); }',
-        'snapMode': 'PathView.SnapOneItem',
-        'preferredHighlightBegin': '0.5',
-        'preferredHighlightEnd': '0.5',
-        'pathItemCount':
-            '{ let count = Math.ceil(width / itemMainLength); '
-            'return (count + 2 <= model.count) ? count + 2 : Math.min(count, model.count); }',
-        'readonly property int pathLength': 'pathItemCount * itemMainLength',
-    },
-    ('system', 'carousel__axis_delegate', 'systemcarousel__axis_delegate'): {
-        'readonly property bool selected': 'PathView.isCurrentItem',
-        'opacity': 'selected ? 1.0 : 0.5',
-    },
-    ('system', 'carousel__axis_delegate_image', 'systemcarousel__axis_delegate_image'): {
-        'id': 'logoImage',
-        'anchors.fill': 'parent',
-        'asynchronous': 'true',
-        'smooth': 'false',
-        'readonly property string sourceRelPath':
-            "{ "
-            "let path = g_PLATFORM_LOGOS.get(modelData.shortName); "
-            "if (path) return path;"
-            "path = g_PLATFORM_LOGOS.get('__generic');"
-            "if (path) return path"
-            ".replace('${system.name}', modelData.shortName)"
-            ".replace('${system.theme}', modelData.shortName);"
-            "return null; }",
-        'source': "(sourceRelPath && `../${sourceRelPath}`) || ''",
-        'fillMode': 'Image.PreserveAspectFit',
-        'visible': 'status == Image.Ready',
-        'opacity': 'visible ? 1.0 : 0.0',
-    },
-    ('system', 'carousel__axis_delegate_text', 'systemcarousel__axis_delegate_text'): {
-        'textFormat': "Text.PlainText",
-        'id': "logoText",
-        'anchors.centerIn': "parent",
-        'color': "'#000'",
-        'text': "shortName || longName",
-        'font.pixelSize': "0.085 * Window.height",
-        'visible': "logoImage.status != Image.Loading && logoImage.status != Image.Ready",
-    },
 }
 DEFAULT_PROPS[('*', 'datetime', '*')] = {
     **DEFAULT_PROPS.get(('*', 'text', '*'), {}),

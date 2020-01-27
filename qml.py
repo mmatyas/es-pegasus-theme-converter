@@ -1,7 +1,8 @@
 import os
 from typing import Dict, List
 
-from qml_render import render_view_items, font_path_to_name, create_systemcarousel
+from qml_render import render_view_items, font_path_to_name
+from qml_render_special import create_systemcarousel
 from static import SUPPORTED_VIEWS, STATIC_FILES
 
 
@@ -101,7 +102,7 @@ def fill_templates(ui_platforms, default_views, out_files):
         first_platform = sorted(ui_platforms, key=lambda p: p.name)[0]
         carousel_elem = first_platform.views['system']['systemcarousel']
 
-    carousel_lines = create_systemcarousel(carousel_elem)[0].render(indent=1)
+    carousel_lines = create_systemcarousel(carousel_elem).render(indent=1)
     out_files['__components/SystemView.qml'] = out_files['__components/SystemView.qml'] \
         .replace('$$SYSTEMCAROUSEL$$', '\n'.join(carousel_lines))
 
