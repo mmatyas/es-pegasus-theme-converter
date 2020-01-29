@@ -5,10 +5,10 @@ from es_items import Element
 
 
 class QmlItem:
-    def __init__(self, typename):
+    def __init__(self, typename: str, props=None):
         self.typename = typename
-        self.props: Dict[str, str] = {}
-        self.extra_lines = []
+        self.props: Dict[str, str] = props if props else {}
+        self.extra_lines: List[str] = []
         self.childs: List[QmlItem] = []
         self.named_childs: Dict[str, QmlItem] = {}
 
@@ -458,6 +458,45 @@ def create_textlist(viewname: str, elem: Element) -> List[QmlItem]:
     return [qlist]
 
 
+def create_scrolltext(viewname: str, elem: Element) -> List[QmlItem]:
+    qtext = create_text(viewname, elem)[0]
+
+    container_id = qtext.props.pop('id')
+    inner_id = container_id + '_inner'
+    scroll_id = container_id + '_scroll'
+
+    qcontainer = QmlItem('Flickable')
+    qcontainer.props = get_defaults(viewname, elem.type + '__flick', elem.name + '__flick')
+    for key in qcontainer.props:
+        qcontainer.props[key] = qcontainer.props[key].replace('$INNERID', inner_id)
+        qcontainer.props[key] = qcontainer.props[key].replace('$SCROLLID', scroll_id)
+
+    for key in ['x', 'y', 'width', 'height']:
+        if key in qtext.props:
+            qcontainer.props[key] = qtext.props.pop(key)
+
+    qtext.props['width'] = 'parent.width'
+    qtext.props['id'] = inner_id
+    qcontainer.props['id'] = container_id
+
+    qanim = QmlItem('SequentialAnimation on contentY')
+    qanim.props = {
+        'id': scroll_id,
+        'loops': 'Animation.Infinite',
+    }
+    qanim.childs.append(QmlItem('PauseAnimation', {'duration': '1000'}))
+    qanim.childs.append(QmlItem('PropertyAnimation', {
+        'to': f"Math.max(0, {container_id}.contentHeight - {container_id}.height)",
+        'duration': f"{inner_id}.lineCount * 1000",
+    }))
+    qanim.childs.append(QmlItem('PauseAnimation', {'duration': '3000'}))
+    qanim.childs.append(QmlItem('PropertyAnimation', {'to': '0', 'duration': '500'}))
+
+    qcontainer.childs.append(qanim)
+    qcontainer.childs.append(qtext)
+    return [qcontainer]
+
+
 def render_view_items(viewname: str, elems: List[Element]) -> List[str]:
     elems = sorted(elems, key=es_zorder)
     # print(f"  - {viewname}: {len(elems)} elem")
@@ -485,8 +524,13 @@ def render_view_items(viewname: str, elems: List[Element]) -> List[str]:
                 qroot.childs.extend(create_image(viewname, elem))
             continue
         if elem.type == 'text':
-            if not (viewname == 'system' and elem.name in ['systemInfo', 'logoText']):
-                qroot.childs.extend(create_text(viewname, elem))
+            if elem.name == 'md_description' and not elem.is_extra:
+                qroot.childs.extend(create_scrolltext(viewname, elem))
+                continue
+            if viewname == 'system' and elem.name in ['systemInfo', 'logoText']:
+                # Handled separately
+                continue
+            qroot.childs.extend(create_text(viewname, elem))
             continue
         if elem.type == 'datetime':
             qroot.childs.extend(create_text(viewname, elem))

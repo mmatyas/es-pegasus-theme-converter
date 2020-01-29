@@ -330,6 +330,15 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
         'wrapMode': 'Text.WordWrap',
         'height': 'root.height - y',
     },
+    ('*', 'text__flick', '*'): {
+        'clip': 'true',
+        'interactive': 'false',
+        'flickableDirection': 'Flickable.VerticalFlick',
+        'contentWidth': 'width',
+        'contentHeight': '$INNERID.height',
+        'readonly property alias text': '$INNERID.text',
+        'onTextChanged': '{ contentY = 0; $SCROLLID.complete(); $SCROLLID.restart(); }',
+    },
     ('*', 'helpsystem', '*'): {
         'x': '0.012 * root.width',
         'y': '0.9515 * root.height',
