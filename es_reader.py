@@ -138,7 +138,7 @@ def read_view(xml_path, variables, viewname, viewnode, view) -> Set[str]:
                 continue
 
             item.params = {**item.params, **found_params}
-            item.is_extra = not expected_type
+            item.is_extra = really_extra
 
     return unsupported_elems
 
