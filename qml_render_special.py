@@ -1,5 +1,5 @@
 from es_items import Element
-from qml_render import QmlItem, render_prop_id, render_prop_pos, render_rgba_color
+from qml_render import QmlItem, render_prop_id, render_prop_pos, render_rgba_color, create_text
 from typing import Dict
 
 
@@ -213,3 +213,34 @@ def create_systemcarousel(elem: Element) -> QmlItem:
 
     qcontainer.childs.append(qcarousel)
     return qcontainer
+
+
+def create_systeminfo(elem: Element) -> QmlItem:
+    qitem = create_text('system', elem)[0]
+    qitem.props.update({
+        'text': "root.model.get(currentIndex).games.count + ' GAMES AVAILABLE'",
+        'readonly property alias currentIndex': 'root.currentIndex',
+        'onCurrentIndexChanged': '{visible = false; opacity = 0.0; fadeInTimer.restart();}',
+    })
+
+    if 'pos' not in elem.params:
+        qitem.props['anchors.top'] = "systemcarousel.bottom"
+
+    if 'size' not in elem.params:
+        qitem.props.update({
+            'anchors.left': 'parent.left',
+            'anchors.right': 'parent.right',
+            'height': 'font.pixelSize * 1.75',
+        })
+
+    qtimer = QmlItem('Timer')
+    qtimer.props = {
+        'id': 'fadeInTimer',
+        'interval': '1000',
+        'onTriggered': '{parent.visible = true; parent.opacity = 1.0}',
+    }
+
+    qitem.childs.append(qtimer)
+    qitem.extra_lines.append('Behavior on opacity { NumberAnimation { duration: 300 } }')
+
+    return qitem

@@ -26,6 +26,7 @@ DEFAULT_VIEW_ITEMS: Dict[str, Dict[str, str]] = {
         'logo': 'image',
         'logoText': 'text',
         'systemcarousel': 'carousel',
+        'systemInfo': 'text',
     },
     'basic': {
         'background': 'image',
@@ -171,7 +172,7 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     ('detailed', 'datetime', 'md_lastplayed'): {
         'displayRelative': 'true',
     },
-    ('*', 'carousel', '*'): {
+    ('system', 'carousel', '*'): {
         'type': 'horizontal',
         'logoAlignment': 'center',
         'size': '1 0.2325',
@@ -182,6 +183,12 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
         'logoRotationOrigin': '-5 0.5',
         'logoSize': '0.25 0.155',
         'maxLogoCount': '3',
+    },
+    ('system', 'text', 'systemInfo'): {
+        'alignment': 'center',
+        'backgroundColor': 'ddddddd8',
+        'fontSize': FONT_SIZE_SMALL,
+        'size': '1 ' + str(float(FONT_SIZE_SMALL) * 2.2)
     },
 }
 DEFAULT_PROPS[('*', 'datetime', '*')] = {

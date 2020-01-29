@@ -199,6 +199,7 @@ RESERVED_ITEMS: Dict[str, Dict[str, str]] = {
         'logo': 'image',
         'logoText': 'text',
         'systemcarousel': 'carousel',
+        'systemInfo': 'text',
     },
     'basic': {
         'background': 'image',
@@ -467,20 +468,7 @@ FocusScope {
     }
   }
 $$SYSTEMCAROUSEL$$
-  Text {
-    textFormat: Text.PlainText
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.top: systemcarousel.bottom
-    height: font.pixelSize * 1.75
-    color: '#000'
-    font.pixelSize: root.height * 0.035
-    font.family: es_default.name
-    text: root.model.get(root.currentIndex).games.count + " GAMES AVAILABLE"
-    horizontalAlignment: Text.AlignHCenter
-    verticalAlignment: Text.AlignVCenter
-    Rectangle { anchors.fill: parent; color: '#ddd'; opacity: 0.847; z: -1 }
-  }
+$$SYSTEMINFO$$
 }
 ''',
     '__components/DetailsView.qml': '''
