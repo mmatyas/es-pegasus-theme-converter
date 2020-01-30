@@ -410,7 +410,7 @@ def create_helpsystem(viewname: str, elem: Element) -> List[QmlItem]:
     ]
 
 
-def create_textlist(viewname: str, elem: Element) -> List[QmlItem]:
+def create_textlist(viewname: str, elem: Element, fontmap: Dict[str, Font]) -> List[QmlItem]:
     qlist = QmlItem('ListView')
     qlist.props = get_defaults(viewname, elem.type, elem.name)
     qdelegate = QmlItem('Text')
@@ -423,6 +423,17 @@ def create_textlist(viewname: str, elem: Element) -> List[QmlItem]:
     render_prop_textinfo(elem, qdelegate.props)
     render_prop_zindex(elem, qlist.props)
     render_prop_visible(elem, qlist.props)
+
+    if 'fontPath' in elem.params:
+        font_name = font_path_to_name(elem.params['fontPath'])
+        metrics = fontmap[font_name].metrics
+
+        if 'font.pixelSize' in qdelegate.props:
+            qt, es = metrics.qt_baseline, metrics.es_baseline
+            qdelegate.props['font.pixelSize'] = f"{qdelegate.props['font.pixelSize']} * {es} / {qt}"
+        if 'lineHeight' in qdelegate.props:
+            qt, es = metrics.qt_line_height, metrics.es_line_height
+            qdelegate.props['lineHeight'] = f"{float(qdelegate.props['lineHeight'])} * {es} / {qt}"
 
     if 'size' in elem.params:
         pair = elem.params['size']
@@ -559,7 +570,7 @@ def render_view_items(viewname: str, elems: List[Element], fontmap: Dict[str, Fo
             qroot.childs.extend(create_helpsystem(viewname, elem))
             continue
         if elem.type == 'textlist':
-            qroot.childs.extend(create_textlist(viewname, elem))
+            qroot.childs.extend(create_textlist(viewname, elem, fontmap))
             continue
         if elem.type == 'carousel':
             # Handled separately

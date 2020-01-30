@@ -317,6 +317,7 @@ DEFAULT_PROPS: Dict[Tuple[str, str, str], Dict[str, str]] = {
     },
     ('*', 'textlist__delegate', '*'): {
         'width': 'ListView.view.width',
+        'height': 'font.pixelSize * lineHeight',
         'elide': 'Text.ElideRight',
     },
     ('*', 'textlist__delegate', 'gamelist__delegate'): {
