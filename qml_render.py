@@ -1,4 +1,5 @@
 import re
+from font import Font
 from static import DEFAULT_PROPS, DEFAULT_ZORDERS
 from typing import Dict, List
 from es_items import Element
@@ -271,7 +272,7 @@ def create_image(viewname: str, elem: Element) -> List[QmlItem]:
     return [qitem] + siblings
 
 
-def create_text(viewname: str, elem: Element) -> List[QmlItem]:
+def create_text(viewname: str, elem: Element, fontmap: Dict[str, Font]) -> List[QmlItem]:
     qitem = QmlItem('Text')
     qitem.props = get_defaults(viewname, elem.type, elem.name)
 
@@ -283,6 +284,20 @@ def create_text(viewname: str, elem: Element) -> List[QmlItem]:
     render_prop_opacity(elem, qitem.props)
     render_prop_fontinfo(elem, qitem.props)
     render_prop_textinfo(elem, qitem.props)
+
+    if 'fontPath' in elem.params:
+        font_name = font_path_to_name(elem.params['fontPath'])
+        metrics = fontmap[font_name].metrics
+
+        if 'y' in qitem.props:
+            qt, es = metrics.qt_s_y, metrics.es_s_y
+            qitem.props['y'] = f"{qitem.props['y']} - font.pixelSize * {(qt - es) / qt}"
+        if 'font.pixelSize' in qitem.props:
+            qt, es = metrics.qt_baseline, metrics.es_baseline
+            qitem.props['font.pixelSize'] = f"{qitem.props['font.pixelSize']} * {es / qt}"
+        if 'lineHeight' in qitem.props:
+            qt, es = metrics.qt_line_height, metrics.es_line_height
+            qitem.props['lineHeight'] = f"{float(qitem.props['lineHeight']) * es / qt}"
 
     if 'size' in elem.params:
         pair = elem.params['size']
@@ -458,8 +473,8 @@ def create_textlist(viewname: str, elem: Element) -> List[QmlItem]:
     return [qlist]
 
 
-def create_scrolltext(viewname: str, elem: Element) -> List[QmlItem]:
-    qtext = create_text(viewname, elem)[0]
+def create_scrolltext(viewname: str, elem: Element, fontmap: Dict[str, Font]) -> List[QmlItem]:
+    qtext = create_text(viewname, elem, fontmap)[0]
 
     container_id = qtext.props.pop('id')
     inner_id = container_id + '_inner'
@@ -473,7 +488,9 @@ def create_scrolltext(viewname: str, elem: Element) -> List[QmlItem]:
 
     for key in ['x', 'y', 'width', 'height']:
         if key in qtext.props:
-            qcontainer.props[key] = qtext.props.pop(key)
+            qcontainer.props[key] = qtext.props \
+                .pop(key) \
+                .replace(' font.', f" {inner_id}.font.")
 
     qtext.props['width'] = 'parent.width'
     qtext.props['id'] = inner_id
@@ -497,7 +514,7 @@ def create_scrolltext(viewname: str, elem: Element) -> List[QmlItem]:
     return [qcontainer]
 
 
-def render_view_items(viewname: str, elems: List[Element]) -> List[str]:
+def render_view_items(viewname: str, elems: List[Element], fontmap: Dict[str, Font]) -> List[str]:
     elems = sorted(elems, key=es_zorder)
     # print(f"  - {viewname}: {len(elems)} elem")
 
@@ -525,15 +542,15 @@ def render_view_items(viewname: str, elems: List[Element]) -> List[str]:
             continue
         if elem.type == 'text':
             if elem.name == 'md_description' and not elem.is_extra:
-                qroot.childs.extend(create_scrolltext(viewname, elem))
+                qroot.childs.extend(create_scrolltext(viewname, elem, fontmap))
                 continue
             if viewname == 'system' and elem.name in ['systemInfo', 'logoText']:
                 # Handled separately
                 continue
-            qroot.childs.extend(create_text(viewname, elem))
+            qroot.childs.extend(create_text(viewname, elem, fontmap))
             continue
         if elem.type == 'datetime':
-            qroot.childs.extend(create_text(viewname, elem))
+            qroot.childs.extend(create_text(viewname, elem, fontmap))
             continue
         if elem.type == 'rating':
             qroot.childs.extend(create_rating(viewname, elem))

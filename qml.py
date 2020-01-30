@@ -1,17 +1,18 @@
 import os
 from typing import Dict, List
 
+from font import Font
 from qml_render import render_view_items, font_path_to_name
 from qml_render_special import create_systemcarousel, create_systeminfo
 from static import SUPPORTED_VIEWS, STATIC_FILES
 
 
-def create_qml_defaults(default_views, out_files):
+def create_qml_defaults(default_views, out_files, fontmap):
     for viewname in default_views:
         if viewname not in SUPPORTED_VIEWS:
             continue
 
-        lines = render_view_items(viewname, default_views[viewname].values())
+        lines = render_view_items(viewname, default_views[viewname].values(), fontmap)
 
         import_lines = 5
         lines.insert(import_lines, "  Rectangle { anchors.fill: parent; color: '#fff' }")
@@ -20,20 +21,20 @@ def create_qml_defaults(default_views, out_files):
         out_files[filepath] = '\n'.join(lines)
 
 
-def create_qml_platform_views(platform, out_files):
+def create_qml_platform_views(platform, out_files, fontmap):
     for viewname in platform.views:
         if viewname not in SUPPORTED_VIEWS:
             continue
 
-        lines = render_view_items(viewname, platform.views[viewname].values())
+        lines = render_view_items(viewname, platform.views[viewname].values(), fontmap)
 
         filepath = os.path.join(platform.name, viewname + '.qml')
         out_files[filepath] = '\n'.join(lines)
 
 
-def collect_fonts(ui_platforms):
+def collect_fonts(platforms) -> Dict[str, Font]:
     paths = []
-    for platform in ui_platforms:
+    for platform in platforms:
         for viewname in platform.views:
             for elem in platform.views[viewname].values():
                 if 'fontPath' in elem.params:
@@ -41,8 +42,8 @@ def collect_fonts(ui_platforms):
 
     paths = map(os.path.normpath, paths)
     paths = set(paths)
-    paths = [{'name': font_path_to_name(p), 'path': p} for p in paths]
-    return paths
+    fonts = {font_path_to_name(p): Font(p) for p in paths}
+    return fonts
 
 
 def collect_platform_logos(ui_platforms):
@@ -66,8 +67,7 @@ def collect_platform_views(ui_platforms) -> Dict[str, List[str]]:
     return views
 
 
-def fill_templates(ui_platforms, default_views, out_files):
-    fonts = collect_fonts(ui_platforms)
+def fill_templates(ui_platforms, default_views, out_files, fontmap):
     platform_logos = collect_platform_logos(ui_platforms)
     platform_views = collect_platform_views(ui_platforms)
 
@@ -84,7 +84,7 @@ def fill_templates(ui_platforms, default_views, out_files):
     platforms_w_details_str = [f"    '{k}'," for k, views in platform_views.items() if 'detailed' in views]
     platforms_w_details_str = sorted_str(platforms_w_details_str)
 
-    fontlist_str = [f"  FontLoader {{ id: {f['name']}; source: '{f['path']}' }}" for f in fonts]
+    fontlist_str = [f"  FontLoader {{ id: {name}; source: '{f.path}' }}" for name, f in fontmap.items()]
     fontlist_str = sorted_str(fontlist_str)
 
     out_files['theme.qml'] = out_files['theme.qml'] \
@@ -102,7 +102,7 @@ def fill_templates(ui_platforms, default_views, out_files):
         first_system = sorted(ui_platforms, key=lambda p: p.name)[0].views['system']
 
     carousel_lines = create_systemcarousel(first_system['systemcarousel']).render(indent=1)
-    gamecounter_lines = create_systeminfo(first_system['systemInfo']).render(indent=1)
+    gamecounter_lines = create_systeminfo(first_system['systemInfo'], fontmap).render(indent=1)
     out_files['__components/SystemView.qml'] = out_files['__components/SystemView.qml'] \
         .replace('$$SYSTEMCAROUSEL$$', '\n'.join(carousel_lines)) \
         .replace('$$SYSTEMINFO$$', '\n'.join(gamecounter_lines))
@@ -111,14 +111,17 @@ def fill_templates(ui_platforms, default_views, out_files):
 def create_qml(theme_name, platforms, default_views) -> Dict[str, str]:
     out_files: Dict[str, str] = {}
 
-    create_qml_defaults(default_views, out_files)
+    fonts = collect_fonts(platforms)
+    print(fonts)
+
+    create_qml_defaults(default_views, out_files, fonts)
     for platform in platforms:
-        create_qml_platform_views(platform, out_files)
+        create_qml_platform_views(platform, out_files, fonts)
 
     for path, contents in STATIC_FILES.items():
         out_files[path] = contents.strip()
 
-    fill_templates(platforms, default_views, out_files)
+    fill_templates(platforms, default_views, out_files, fonts)
 
     lines = [
         "name: " + theme_name,

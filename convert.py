@@ -6,7 +6,7 @@ import sys
 from distutils.dir_util import copy_tree
 from typing import Dict
 
-from errors import print_info
+from errors import print_info, print_error
 from qml import create_qml
 from es_reader import find_platforms
 from es_items import create_default_views
@@ -103,4 +103,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except RuntimeError as err:
+        print_error(err)

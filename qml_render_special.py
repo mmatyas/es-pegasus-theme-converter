@@ -1,3 +1,4 @@
+from font import Font
 from es_items import Element
 from qml_render import QmlItem, render_prop_id, render_prop_pos, render_rgba_color, create_text
 from typing import Dict
@@ -215,8 +216,8 @@ def create_systemcarousel(elem: Element) -> QmlItem:
     return qcontainer
 
 
-def create_systeminfo(elem: Element) -> QmlItem:
-    qitem = create_text('system', elem)[0]
+def create_systeminfo(elem: Element, fontmap: Dict[str, Font]) -> QmlItem:
+    qitem = create_text('system', elem, fontmap)[0]
     qitem.props.update({
         'text': "root.model.get(currentIndex).games.count + ' GAMES AVAILABLE'",
         'readonly property alias currentIndex': 'root.currentIndex',
